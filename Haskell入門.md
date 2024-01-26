@@ -22,7 +22,7 @@ int converter(int x) {
   return x * 2;
 }
 ```
-関数型プログラミングという言葉に明確な定義はありませんが、端的に言えば関数の「写像」としての側面を多用するスタイルのプログラミングのことを指します。プログラムの仕様を説明する際に「○○を××したもの」という多く出てくるようであれば、関数型プログラミングの恩恵を強く受けられます。例として、Pythonで書かれた次のコード片を見てみましょう。
+関数型プログラミングという言葉に明確な定義はありませんが、端的に言えば関数の「写像」としての側面を多用するスタイルのプログラミングのことを指します。プログラムの仕様を説明する際に「○○を××したもの」という表現が多く出てくるようであれば、関数型プログラミングの恩恵を強く受けられます。例として、Pythonで書かれた次のコード片を見てみましょう。
 ```python
 # 配列の各要素を二乗して、30より小さいものだけ取り出すコード
 
@@ -45,16 +45,15 @@ result = filter(lambda x: x < 30, map(lambda x: x ** 2, original))
 
 しかしながら、「ふつうのプログラミング言語」において、関数という言語機能は「写像」としてではなく、「いろんな命令を実行して最後に値を返す手続き」として用意されています。このような言語で関数型プログラミングをしようとする限り、私たちは「値を返す手続き」を「写像」だとがんばって思い込むことを強いられますし、「値を返す手続き」を手なずけて「写像」のように振る舞わせるために、いろんなことに気を遣わなければいけません（学部の講義でPythonを使ったことがあるならば、引数として配列を渡したあとうっかりオリジナルを書き換えてバグらせたことがあると思います）。
 
-関数型プログラミング言語を習得していない人は、仕様の中に「△△は○○を××したものである」という文が増えれば増えるほど、翻訳調の手続き型プログラミングと快適でない関数型プログラミングの間で選択を迫られることになります。
+関数型プログラミング言語を習得していない人は、仕様の中に「△△は○○を××したものである」という表現が増えれば増えるほど、翻訳調の手続き型プログラミングと快適でない関数型プログラミングの間で選択を迫られることになります。
 
 これは無用な苦痛です。関数型プログラミングが上手く填まる場面にはHaskellのような関数型プログラミング言語を持ってくるべきなのです。
 ```haskell
 -- これがHaskellのコードです
-
-filterOddThenSquare :: [Int] -> [Int]
-filterOddThenSquare list = filter (\x -> x `mod` 2 == 1) ((^ 2) <$> list)
+squareThenFilterUnder30 :: [Int] -> [Int]
+squareThenFilterUnder30 = filter (< 30) . map (^ 2)
 ```
-「関数型プログラミング言語」という言葉にも明確な定義はありませんが、おおむね「関数型プログラミングが快適」「関数を見て『写像』だと納得しやすい」という特徴を言語仕様で実現しているプログラミング言語がこう呼ばれます。これに加えて、Haskellには関数型プログラミングをさらに快適にするためにいくつか珍しい特徴を持ちます。
+「関数型プログラミング言語」という言葉にも明確な定義はありませんが、おおむね「関数型プログラミングが快適」「関数を見て『写像』だと納得しやすい」という特徴を言語仕様で実現しているプログラミング言語がこう呼ばれます。
 
 Haskellの特徴について軽く紹介します：
 
@@ -115,7 +114,14 @@ tanuki = filter (\c -> c /= 'た')
 
 
 ### 0.2 環境構築
-2024年現在は、ツールチェーンマネージャの [GHCup](https://www.haskell.org/ghcup/) を使うことが推奨されています。過去にはインストール方法が混迷を極めていた時代もありましたが、現時点ではWindowsでもMacでもLinuxでもGHCupを使えば一発で環境構築ができます。インストールの途中で「Stackをインストールするか？」「HLS(Haskell Language Server)をインストールするか？」と訊かれますが、これにはどちらもyと答えてください。Windowsを使っている場合は、インストール後に環境変数の変更を反映させるため、一度再起動してください。
+2024年現在は、ツールチェーンマネージャの [GHCup](https://www.haskell.org/ghcup/) を使うことが推奨されています。インストールの途中で「Stackをインストールするか？」「HLS(Haskell Language Server)をインストールするか？」と訊かれますが、これにはどちらもyと答えてください。Windowsを使っている場合は、インストール後に環境変数の変更を反映させるため、一度再起動してください。
+
+インストールされるツール群は以下の通りです：
+- GHCup
+- GHC（Haskellのコンパイラ）
+- Cabal（Haskellのパッケージマネージャ）
+- Stack（Cabalのラッパー）
+- HLS（Haskell Language Server、エディタ上での補完などをしてくれる）
 
 VSCodeに拡張機能「Haskell」（id: haskell.haskell）をインストールすれば、環境構築は完了です。
 
@@ -492,67 +498,36 @@ li3 = [MyTrue, MyFalse]
 2.  `List a` の各要素に型 `a -> b` の関数を適用する関数 `listmap :: (a -> b) -> List a -> List b` を定義してみよう
 
 ### 1.5 型クラス
-- ghci上で `:t 42` としたときに表示された `Num a => a` とは、あるいは、`(+) :: Num a => a -> a -> a` とは、どういう意味だろうか？
-  - 型シグネチャに `=>` が出てきた場合、左側は「型クラス制約」と呼ばれる型に関する条件をあらわすもので、右側が型本体である
-  - ここで出てきた `Num` は、「型クラス」と呼ばれるものの一つで、述語論理における「述語」のようなものである
-  - `Num` の具体的な意味は「和・差・積・絶対値・符号の取り出し・整数からのキャスト ができる」である
-  - 制約 `Num a` を満たす具体的な型として、`Int` や `Double` がある
-
-- 型クラスは、Javaのinterfaceに類似した概念（型クラスのほうが表現力が高い）であり、Rustにおけるtraitの元ネタである
-- 型クラスのKindを調べると、たとえば `Num :: * -> Constraint` と出てくる
-  - `Constraint` は、型クラス制約を表すKindであり、型クラスのKindは `-> Constraint` で終わる
-
-- 型クラスを定義する際、その型クラスを満たす型に対して必ず実装すべき関数を定義することができる
-  - 具体的に、ある型 a について `Num a` が成り立つ場合は、必ず以下の関数が定義されている
-    - `(+) :: a -> a -> a`
-    - `(-) :: a -> a -> a`
-    - `(*) :: a -> a -> a`
-    - `signum :: a -> a`
-    - `abs :: a -> a`
-    - `fromInteger :: Integer -> a` （Integerは多倍長整数の型）
-  - 自分で作った型 `SomeType` について `Num SomeType` が成り立つようにしたかったら、これらの関数を定義する必要がある
-
-- 型クラスを具体的に定義して、ここまで挙げたいろいろな型がそれを満たすようにしてみよう
-```haskell
--- まずは、型クラスを定義する
-class MyMonoid a where
-  mymempty :: a -- モノイドには単位元がある
-  mymappend :: a -> a -> a -- モノイドには結合則がある
-
--- 次に、ここまで出てきた型が MyMonoid を満たすようにする
-instance MyMonoid IntList where
-  mymempty = ILNil
-  mymappend x y = -- 節末問題を解いていたら、 myappend = ilappend としてよい
-    case x of
-      ILNil -> y
-      ILCons z zs -> ILCons z (mymappend zs y)
-
-instance MyMonoid (List a) where
-  mymempty = LNil
-  mymappend x y = -- 節末問題を解いていたら、 myappend = lappend としてよい
-    case x of
-      LNil -> y
-      LCons z zs -> LCons z (mymappend zs y)
-
-instance MyMonoid [a] where
-  mymempty = []
-  mymappend x y = x ++ y -- ++ はリストの結合演算子
+1.1節で少し遊んでいた場合、あるいはここまでで型エラーを見た場合、型シグネチャの中にここまで説明されなかった `=>` という記号を見たのではないでしょうか。
 ```
-- こうして型クラスを作ってしまえば、これを満たす型についてそれぞれ動作する関数を書くことができる
-```haskell
-double :: MyMonoid a => a -> a
-double x = x `mymappend` x -- `` で囲むと中置演算子として扱える
-
--- MyMonoid を満たす [Int] についても IntList についても、おなじように double を使える
-doubledList    = double [1, 2, 3] -- [1, 2, 3, 1, 2, 3]
-doubledIntList = double (ILCons 1 (ILCons 2 ILNil)) -- ILCons 1 (ILCons 2 (ILCons 1 (ILCons 2 ILNil)))
+ghci> :t 42
+42 :: Num a => a
+ghci> :t (+)
+(+) :: Num a => a -> a -> a
 ```
+型シグネチャにおいて、`=>` の右側は型そのものを、左側は型に関する条件を表します。`Num` は、この条件（型クラス制約と呼ばれます）を書くための「型クラス」と呼ばれるものです。
 
-- 型クラスは複数の引数を取ることもできる
+実際に型クラスを定義してみましょう。型クラスを定義する際、その型クラスに型を属させるにあたって特定の関数の実装を義務づけることができます。
 ```haskell
+-- [elem] と相互変換できるものたちの型クラス
 class Listish elem listish where
-  tolist :: listish -> [elem]
-  fromlist :: [elem] -> listish
+  toList :: listish -> [elem]
+  fromList :: [elem] -> listish
+
+-- 型クラスの引数を埋めると、Constraintという型クラス制約を表すKindが出てくる
+-- >>> :k Listish
+-- Listish :: * -> * -> Constraint
+
+-- IntList と [Int] は相互変換できるので、Listishに属させてみる
+instance Listish Int IntList where
+  toList x =
+    case x of
+      ILNil -> []
+      ILCons y ys -> y : toList ys
+  fromList x =
+    case x of
+      [] -> ILNil
+      y : ys -> ILCons y (fromList ys) 
 
 instance Listish a [a] where
   tolist x = x
@@ -567,18 +542,11 @@ instance Listish a (List a) where
     case x of
       [] -> LNil
       y : ys -> LCons y (fromlist ys)
+```
+型クラスは、Javaのinterfaceに類似した概念（型クラスのほうが表現力が高い）であり、Rustにおけるtraitの元ネタです。
 
-instance Listish Int IntList where
-  tolist x =
-    case x of
-      ILNil -> []
-      ILCons y ys -> y : tolist ys
-  fromlist x =
-    case x of
-      [] -> ILNil
-      y : ys -> ILCons y (fromlist ys)
-
--- 使ってみる
+型クラスと型クラス制約を用いて、`Listish`に属する型全般に使える関数を定義してみます。
+```haskell
 listishHead :: Listish elem listish => listish -> Maybe elem
 listishHead x =
   case tolist x of
@@ -590,10 +558,10 @@ listishSum :: (Listish elem listish, Num elem) => listish -> elem
 listishSum x =
   case tolist x of
     [] -> 0
-    y : ys -> y + listishSum (fromlist ys)
+    y : ys -> y + listishSum (fromlist ys) -- (+) :: Num a => a -> a -> a
 ```
 
-- 型クラスのインスタンスを書く際、型クラス制約を用いてもよい
+型クラスのインスタンスを書く際、型クラス制約を用いることができます。同じ性質を持つ複数の型を型クラスでまとめて、それらすべてに対して一括で関数を書くことができるのは、Haskellの書き味の根幹を占めています。
 ```haskell
 class Maybeish elem maybeish where
   tomaybe :: maybeish -> Maybe elem
@@ -609,23 +577,20 @@ instance Listish elem listish => Maybeish elem listish where
       Nothing -> fromlist []
       Just y -> fromlist [y]
 ```
+「これを定義せよ」と指定された関数さえすべて実装すればどんな型でもインスタンスにできますが、多くの型クラスは「インスタンス宣言で指定された構造が特定の性質を持つ」ことを意図して作られています（モノイドであれば単位律と結合律、リストとの相互変換だったら `toList` と `fromList` の合成が恒等になること、など）。意図された性質（「則」とか「Law」などと呼ばれます）を満たさないインスタンス宣言は避けるべきですし、「則」のない型クラスの濫用はコードの可読性を損ねることに注意する必要があります。
 
-- 型クラスを用いた多相（関数を複数の型に対応させること）はHaskellの書き味の根幹といって差し支えない
-- Haskellの標準ライブラリの関数の多くは、型クラス制約を用いることで複数の型に対応している
-- 標準ライブラリで定義された型クラスのうち、頻繁に使うものには次のような例がある： 
-  - `Eq`      : 等価比較ができる
-  - `Ord`     : 順序比較ができる
-  - `Show`    : `String`に変換できる
-  - `Read`    : `String`から変換できる
-  - `Num`     : 和・差・積・絶対値・符号の取り出し・整数からのキャスト ができる
-  - `Monoid`  : モノイドである
-  - `Functor` : 配列に対するmapと同じようなことができる（第2章のメインテーマである）
+Haskellの標準ライブラリや、この先用いるライブラリ様々には数多くの型クラスが定義されています。標準ライブラリで定義された型クラスのうち、頻繁に使うものには次のような例があります。 
+- `Eq a`      : `a`の等価比較ができる
+- `Ord a`     : `a`の順序比較ができる
+- `Show a`    : `a`は`String`に変換できる
+- `Read a`    : `a`は`String`から変換できる
+- `Num a`     : `a`は和・差・積・絶対値・符号の取り出し・整数からのキャスト ができる
+- `Monoid a`  : `a`はモノイドである
+- `Functor f` : `f :: (* -> *)` について、配列に対するmapと同じような`fmap :: (x -> y) -> f x -> f y`ができる（第2章のメインテーマです）
 
-- `Eq`・`Show` にはデフォルト実装が用意されているため、自分で型を定義したあと `deriving (Show, Eq)` と書けば `instance` で定義しなくてもよい
-  - 独自の実装をしたい場合には instance を書けばよい
+ここで挙げたうち、`Eq`・`Ord`・`Show` にはデフォルト実装が用意されており、自分で型を定義したあと `deriving (Show, Eq)` と書けば勝手にインスタンス定義を行ってくれます。
 
-- 実は、Haskellの `String` 型は `[Char]` のエイリアスである
-- 独自にShowを実装する例：
+Haskellにおける`String`は、`[Char]`のエイリアスです。（パフォーマンス上の欠点が多いため、実用のプログラムで文字列を表す際には第3章で触れる`Text`という型がよく用いられます）
 ```haskell
 data Stars = Stars Int
 instance Show Stars where
@@ -637,25 +602,74 @@ instance Show Stars where
 
 
 #### 節末問題
-- `(\f x y -> f y x)` という関数は、標準ライブラリでは何と呼ばれているだろうか？
-  - ヒント：これの型を考えて、Hoogleで検索し、ドキュメントを読んでほんとうにそう振る舞うか確認しよう
-
-- 型 `V1D`・`V2D`・`V3D` を次のように定義した。ノルム空間を表す型クラス `RNorm` を定義し、これらの型が `RNorm` を満たすようにしてみよう
+1. 型 `V1D`・`V2D`・`V3D` を次のように定義します。実線形空間を表す型クラス `RVect` を定義し、これらの型をそのインスタンスにしましょう。
 ```haskell
 data V1D = V1D Double
 data V2D = V2D Double Double
 data V3D = V3D Double Double Double
 ```
 
-### 1.6 おまけ - 便利なサイト・関数・構文 (その1)
-- 第1章の中に入れたかったが、ちょうどよい場所の見つからなかった便利な事柄について、この節でいくつか紹介する
-- [Hoogle](https://hoogle.haskell.org) は、
+### 1.6 便利なサイト・関数・構文
+第2章に入る前に、便利なサイトや関数・構文をいくつか紹介しておきます。
+
+[Hoogle](https://hoogle.haskell.org) は、型や名前を入力して関数を検索できるすごいサイトです。`set:stackage`となっている部分を`set:included-with-ghc`に変えて、`[a] -> Int`と入力すると、トップに次のような結果が出てきます。
+```
+length :: Foldable t => t a -> Int
+base Prelude Data.List Data.Foldable
+```
+検索結果をクリックすると、ドキュメントを読むことができます。`Foldable` は畳み込み（JSのArray.prototype.reduceなど）をサポートしているものたちの型クラスで、リストはこれに含まれています。二行目の`base Prelude Data.List Data.Foldable`は、この関数が含まれているライブラリ（`base`）とモジュール（`Prelude`・`Data.List`・`Data.Foldable`）を表しています。`Prelude`の関数は、インポートなしで使うことができます。
+
+また、便利な関数や構文についてまとめて紹介します：
+```haskell
+-- セクション：中置演算子の片方にだけ値を突っ込んで、関数にする
+
+_minus_5 :: Int -> Int
+_minus_5 = (-) 5
+
+_7minus5 :: Int
+_7minus5 = _minus_5 7 -- 2
+
+-- 便利な関数
+
+-- 関数合成
+-- >>> :t (.)
+-- (.) :: (b -> c) -> (a -> b) -> a -> c
+
+-- リストのmap
+-- >>> :t map
+-- map :: (a -> b) -> [a] -> [b]
+
+-- リストのfilter
+-- >>> :t filter
+-- filter :: (a -> Bool) -> [a] -> [a]
+
+-- 試してみる
+squareThenFilterUnder30 :: [Int] -> [Int]
+squareThenFilterUnder30 = filter (< 30) . map (^ 2)
+
+
+-- let式：ローカル変数を定義する
+squareThenFilterUnder30' :: [Int] -> [Int]
+squareThenFilterUnder30' x =
+  let
+    square        = map (^ 2)
+    filterUnder30 = filter (< 30)
+
+    squared = square x
+    filtered = filterUnder30 squared
+  in
+    filtered
+```
+
+#### 節末問題
+1. `(\f x y -> f y x)` という関数は、標準ライブラリでは何と呼ばれているでしょうか？
 
 ## 第2章 モナドと和解する
 ### 2.1 mapができるもの、Functor
-- 他の言語で、配列に対するmapをしたことはあるだろうか
-- 1.4の節末問題で扱ったとおり、Haskellで定義したリストについても同じようにmapをすることができる
+「配列様のデータの各要素に関数を適用する」というmap操作は、プログラミングの場面において頻出します。1.3節で定義した `List` について、map操作を行う関数を書いてみます（1.3節の章末問題で出てきた `listmap` です）。
 ```haskell
+-- 参考: map :: (a -> b) -> [a] -> [b] 
+
 listmap :: (a -> b) -> List a -> List b
 listmap f x =
   case x of
@@ -663,8 +677,7 @@ listmap f x =
     LCons y ys -> LCons (f y) (listmap f ys)
 ```
 
-- あるいは、Rustを使っている際、Option に map をしたことがあるだろうか
-- Haskellでは、次のような Just の時だけ中身を変換する関数を定義することができる
+Rustを使ったことのある人であれば、Option に map をしたことがあるかもしれません。この「map」というのは、Someの場合は中身に関数を適用して、Noneの場合はNoneのままにする操作のことでした。
 ```haskell
 maymap :: (a -> b) -> Maybe a -> Maybe b
 maymap f x =
@@ -673,54 +686,123 @@ maymap f x =
     Just y -> Just (f y)
 ```
 
-- 同様の「中身に関数を適用する」操作は、他の型に対しても定義することができそうである
+`map`・`listmap`・`maymap` の型シグネチャを見比べてみると、それぞれなんらかの `f :: (* -> *)` について `(a -> b) -> (f a -> f b)` という形の型をしていることがわかります。また、第3章で出てくる`Vector`や`Map k`についても、同様のmap操作を考えることができます。
 
-- Haskellで頻繁に使う型クラスの一つに、このような操作ができることを表す型クラス `Functor` がある
-  - 型クラス `Functor` のKindを調べると `(* -> *) -> Constraint` と出てくる
-    - つまり、`Functor` は `List` とか `Maybe` のような型一個を受け取って具体的な型になるやつらに関する型クラスである
-  - `f` が `Functor f` を満たすなら、`fmap :: forall a b. (a -> b) -> f a -> f b` という関数を持つ
-    - `[]` とか `Maybe` は `Functor` なので、`fmap` を使うことができ、それぞれ上と同じように定義されている
-  - `Functor` は圏論（数学の一分野）における「自己関手」の概念に由来する
-    - この定義に従って、自分で定義した型を `Functor` のインスタンスとする際には次の条件を満たすことがお願いされている
-      - `fmap id = id` （恒等射の保存）（ここでいう `id` とは、`\x -> x` のこと）
-      - `fmap (f . g) = fmap f . fmap g` （射の合成の保存）（ここでいう `.` は関数合成の演算子、`\f g -> (\x -> f (g x))` のこと）
-    - プログラマがコードを書く際にはこの条件が当然満たされているものだと信じている
-      - まっとうなライブラリの`Functor`ならば`fmap`はこの条件を満たすように実装されているし、それができないなら`Functor`のインスタンスを実装していないと思う
-      - 我々が`Functor`のインスタンスを実装する際も、当然マナーとしてこの条件が満たされるべきである
+リストやMaybeをはじめとした、中身に関数を適用するような操作ができる型に対して、Haskellでは`Functor (f :: * -> *)`という型クラスが用意されています。Hoogleで`Functor`と検索し、検索結果をクリックしてドキュメントを読んでみましょう。
 
-- `Functor` の中には、「中身」という言葉が上手く使えないために `fmap` を「中身に関数を適用する関数」と説明できないものもある
+> ### class Functor (f :: Type -> Type) where
+> 
+> A type f is a Functor if it provides a function fmap which, given any types a and b lets you apply any function from (a -> b) to turn an f a into an f b, preserving the structure of f. Furthermore f needs to adhere to the following:
+> 
+> - Identity
+>     fmap id == id
+> - Composition
+>     fmap (f . g) == fmap f . fmap g
+> 
+> Note, that the second law follows from the free theorem of the type fmap and the first law, so you need only check that the former condition holds. See https://www.schoolofhaskell.com/user/edwardk/snippets/fmap or https://github.com/quchen/articles/blob/master/second_functor_law.md for an explanation.
+> 
+> #### Minimal complete definition
+> - fmap
+
+`Functor` は、先ほどの `map`・`listmap`・`maymap` に相当する関数 `fmap` の実装を要求する型クラスです。また、`fmap`の実装は以下の性質を満たすことを想定されています。
+- `fmap id = id` （恒等射の保存）（ここでいう `id` とは、`\x -> x` のこと）
+- `fmap (f . g) = fmap f . fmap g` （射の合成の保存）（ここでいう `.` は関数合成の演算子、`\f g -> (\x -> f (g x))` のこと）
+
+この`Functor`は、数学の一分野である圏論の「自己関手」と呼ばれる概念に由来しますが、これについての詳しい解説は割愛します。
+
+fmapのことを「中身に関数を適用するような操作」と表現しましたが、`Functor` の中には、「中身」という言葉がうまく当てはまらないものも存在します
 ```haskell
 -- このような IntTo について「型aをもつ中身」を考えるのは無理そうである
 data IntTo a = IntTo (Int -> a)
 
 instance Functor IntTo where
-  fmap f (IntTo g) = IntTo (\x -> f (g x)) -- が、実際これはFunctorについてお願いされた条件を満たしている
-```
-- 極端な例として、マジで中身のない型についても `Functor` にできる
-```haskell
-data Phantom a = Phantom -- どのような型aについても、Phantom a の値は Phantom ただ一つである
+  fmap f (IntTo g) = IntTo (\x -> f (g x)) -- が、実際このfmapはFunctorの則を満たしている
+
+-- 極端な例として、型変数にかかわらず一種類の値しか持たない Phantom という Functor を考えてみる
+data Phantom a = Phantom
 
 instance Functor Phantom where
-  fmap f Phantom = Phantom -- これはお願いされた条件を満たす
+  fmap f Phantom = Phantom -- このfmapもFunctorの則を満たしている
 ```
 
-- `Functor` の実際の用途として、配列様のものへのmapを全部`<$>`で書くのが一番頻繁かつ便利な用途である気はする
+`fmap`の中置演算子版である `<$>` を使うと、コードの見た目をすっきりさせることができます。
 ```haskell
 doubleAll :: [Int] -> [Int]
 doubleAll x = (\y -> y * 2) <$> x -- <$> は fmap の中置演算子版。めっちゃ便利
 ```
 
-- `Functor` より上等な機能を持っているやつらのための型クラスとして、n引数の関数でもmapのようなことができる `Applicative` がある
-  - `Applicative f` は、`Functor f` より狭い制約なので、定義は `class Functor f => Applicative f where` で始まる
-    - この`=>`（制約の広い狭い、なのかな）は型クラス制約の`=>`とはちょっと意味が違う気がするので注意
-  - `Applicative f` ならば、`fmap` に加えて `pure :: a -> f a` と `<*> :: f (a -> b) -> f a -> f b` が使えるようになる
-  - `Applicative` のインスタンスを実装する際には、次の条件を満たすことがお願いされている：
-    - `pure id <*> v = v`
-    - `pure (\f g -> (\x -> f (g x))) <*> u <*> v <*> w = u <*> (v <*> w)`
-    - `pure f <*> pure x = pure (f x)`
-    - `u <*> pure y = pure (\f -> f y) <*> u`
+`Functor` より高等な機能を持っている型のための型クラスはいくつか存在しますが、この先の流れの都合上、n引数の関数でもmapのようなことができる `Applicative` というものを紹介します。Hoogleでドキュメントを検索してみましょう。
+
+> ### class Functor f => Applicative (f :: Type -> Type) where
+> 
+> A functor with application, providing operations to
+> 
+> - embed pure expressions (pure), and
+> - sequence computations and combine their results (<*> and liftA2).
+> 
+> （中略）
+>
+> Further, any definition must satisfy the following:
+>  
+> Identity
+> 
+>     pure id <*> v = v
+> 
+> Composition
+> 
+>     pure (.) <*> u <*> v <*> w = u <*> (v <*> w)
+> 
+> Homomorphism
+> 
+>     pure f <*> pure x = pure (f x)
+> 
+> Interchange
+> 
+>     u <*> pure y = pure ($ y) <*> u
+> 
+> （中略）
+> 
+> #### Minimal complete definition
+> 
+> - pure, ((<*>) | liftA2)
+> 
+> #### Methods
+> 
+> pure :: a -> f a
+> 
+> - Lift a value.
+> 
+> (<*>) :: f (a -> b) -> f a -> f b infixl 4
+> 
+> - Sequential application.
+
+`class Functor f => Applicative f where` の `=>` は、制約の広さについての不等号であることに注意してください。`Applicative` は `Functor` であることが要求されています。
+
+`Applicative f` のインスタンス `f` では、`fmap` に加えて `pure :: a -> f a` と `<*> :: f (a -> b) -> f a -> f b` が使えるようになります。また、`Applicative` のインスタンスは、以下の則を満たすことを想定されています。
+- `pure id <*> v = v`
+- `pure (\f g -> (\x -> f (g x))) <*> u <*> v <*> w = u <*> (v <*> w)`
+- `pure f <*> pure x = pure (f x)`
+- `u <*> pure y = pure (\f -> f y) <*> u`
+
+`Maybe` や `[]` に対して、`pure` と `<*>` はこのように定義されています
 ```haskell
--- []の場合、pure・<*>(別名ap) は次のような中身である
+-- Maybeの場合、pure・<*> (別名ap) は次のような中身である
+pureMaybe :: a -> Maybe a
+pureMaybe x = Just x
+
+apMaybe :: Maybe (a -> b) -> Maybe a -> Maybe b
+apMaybe mf mx =
+  case mf of
+    Nothing -> Nothing
+    Just f ->
+      case mx of
+        Nothing -> Nothing
+        Just x -> Just (f x)
+
+-- >>> (*) <$> Just 6 <*> Just 7
+-- Just 42
+
+-- []の場合、pure・<*> は次のような中身である
 pureList :: a -> [a]
 pureList x = [x]
 
@@ -730,59 +812,12 @@ apList fs xs =
     [] -> []
     f : fs' -> (f <$> xs) ++ (fs' <*> xs)
 
--- 
-
-addOverList :: [Int] -> [Int] -> [Int]
-addOverList lx ly = (+) <$> lx <*> ly 
-{-
-これの型はちょっとややこしいので分解して考える
-まず、
-  (+) :: Int -> (Int -> Int) 
-  (<$>) :: (a -> b) -> f a -> f b （ここで、fは具体的にはリストなので、(a -> b) -> [a] -> [b] と思ってよい）
-  lx :: [Int]
-なので、
-  ((+) <$> lx) の型は [Int -> Int] となる
-次に、
-  (<*>) :: f (a -> b) -> f a -> f b （ここで、fは具体的にはリストなので、[a -> b] -> [a] -> [b] と思ってよい）
-  ly :: [Int]
-なので、
-  ((+) <$> lx <*> ly) の型は [Int] となる
--}
-
--- 当然こういう抽象化ができる
-keisanOverList :: (Int -> Int -> Int) -> [Int] -> [Int] -> [Int]
-keisanOverList f lx ly = f <$> lx <*> ly
-
--- もっと抽象化できる
-opOverApplicative :: Applicative f => (a -> a -> a) -> f a -> f a -> f a
-opOverApplicative f lx ly = f <$> lx <*> ly
-
--- ここまで抽象化したらプログラム中のいろいろな部分で opOverApplicative を使えそうな気がしてくる
--- これが、Haskellにおける「型クラス」の真の力である
+-- >>> (*) <$> [1,2,3] <*> [1,10,100]
+-- [1,10,100,2,20,200,3,30,300]
 ```
-
-- 最後に、`MyList` を `Functor`・`Applicative` にしてみよう
-```haskell
-instance Functor MyList where
-  fmap f xlist =
-    case xlist of
-      MyNil -> MyNil
-      MyCons x xs -> MyCons (f x) (fmap f xs)
-
-instance Applicative MyList where
-  pure x = MyCons x MyNil
-  (<*>) flist xlist =
-    case flist of
-      MyNil -> MyNil
-      MyCons f fs -> (f <$> xlist) `myappend` (fs <*> xlist)
-```
-
-#### 節末問題
-- `MyList`・`IntTo`・`Phantom` について、それぞれお願いされた条件を満たしていることを確かめよう
 
 ### 2.2 連鎖ができるもの、Monad
-- `Maybe` は革命的に便利な型であるが、`Functor`や`Applicative`だけだとその力を最大限に引き出すことはできない
-- リスト内で間接参照をする例を考えてみよう
+`Maybe` は、一度使ったら手放せなくなるぐらいには革命的に便利な型です。しかし、2.1節で出てきた `fmap`や`pure`・`<*>` だけでは、そのポテンシャルを最大限生かすことができません。リストのn番目を読み出す関数をつかって、間接参照をする例を考えてみましょう。
 ```haskell
 -- リストのn番目があれば返す（中置演算子はその名を括弧でくくって定義できる）
 (!?) :: [a] -> Int -> Maybe a
@@ -794,16 +829,15 @@ instance Applicative MyList where
         0 -> Just y
         _ | n < 0 -> Nothing
           | otherwise -> (!?) ys (n - 1)
-      -- ↑ ガード節と呼ばれる、パターンマッチ後に条件を書くことができる便利な構文
 
 -- indirectTwice l x という、リストlの「リストlのx番目の数字」番目を返す関数を作りたい
 -- 例：indirectTwice [2, 0, 1] 1 = Just 2（[2, 0, 1]の1番目は0なので、[2, 0, 1]の0番目の数字2を取り出せて、Just 2 が帰ってくる、ようにしたい）
-indirectTwice l x = (l !?) <$> (l !? x)
---                   ↑ これは、セクションと呼ばれる構文。丸括弧のなかに中置演算子と値片方のみを突っ込むと、残りの値を待つ関数になる
+indirectTwiceDup :: [Int] -> Int -> Maybe (Maybe Int)
+indirectTwiceDup l x = (l !?) <$> (l !? x)
 
 -- 残念ながら、このindirectTwiceの型は [Int] -> Int -> Maybe (Maybe Int) となってしまう
 ```
-- 仕方がないので、入れ子になった `Maybe` をつぶして「平ら」にする関数 `flatten :: Maybe (Maybe a) -> Maybe a` を定義してみることにする
+入れ子になった `Maybe` をつぶして「平ら」にする関数 `flatten :: Maybe (Maybe a) -> Maybe a` を定義してみることにします。
 ```haskell
 -- 一回目か二回目で失敗してたらNothing、両方成功ならJustを一個にする
 flatten :: Maybe (Maybe a) -> Maybe a
@@ -816,9 +850,10 @@ flatten x =
     -- Just Nothing  -> Nothing
 
 -- これを使って、indirectTwiceを書き直す
-indirectTwice2 l x = flatten ((l !?) <$> (l !? x))
+indirectTwice :: [Int] -> Int -> Maybe Int
+indirectTwice l x = flatten ((l !?) <$> (l !? x))
 ```
-- あるいは、最初から and_thenみたく `flatmap :: (a -> Maybe b) -> Maybe a -> Maybe b` という関数を定義したほうがわかりやすいかもしれない
+このような用途であれば、 `flatmap :: (a -> Maybe b) -> Maybe a -> Maybe b` という関数を定義すれば一発で書くことができます。（このflatmapは、Rustだと`and_then`と呼ばれています）
 ```haskell
 -- この mayflatmap は flatten . fmap と等価である
 mayflatmap :: (a -> Maybe b) -> Maybe a -> Maybe b
@@ -828,9 +863,10 @@ mayflatmap f x =
     Just y -> f y
 
 -- これを使って、indirectTwiceを書き直す
-indirectTwice3 l x = (l !?) `mayflatmap` (l !? x)
+indirectTwice2 :: [Int] -> Int -> Maybe Int
+indirectTwice2 l x = (l !?) `mayflatmap` (l !? x)
 ```
-- こう書くと、`(l !?)` に `(l !? x)` を注入しているみたいだから、そのイメージをかっこよく表した中置演算子を定義してみよう
+中置記法を用いて書くと、 `(l !?)` という関数に `(l !? x)` の結果を注入しているようなイメージができます。そのイメージをかっこよく表した中置演算子を定義してみよう。
 ```haskell
 -- ろうとの形だと思ってほしい
 (=<<) :: (a -> Maybe b) -> Maybe a -> Maybe b
@@ -840,26 +876,23 @@ indirectTwice3 l x = (l !?) `mayflatmap` (l !? x)
 (>>=) :: Maybe a -> (a -> Maybe b) -> Maybe b
 (>>=) = flip mayflatmap
 ```
-- 名前の衝突で怒られてしまったので、いま書いた演算子二つは消しておこう（標準ライブラリの同名の演算子はおなじ挙動をする）
-- これを使えば、`indirectThrice` も `indirectQuince` も簡単に書けそうである
+名前の衝突で怒られてしまったので、いま書いた演算子二つは`nyumon.hs`から消しておくことにします。（Preludeにすでに同名の演算子が存在し、これは`Maybe`について同じように振る舞います）
+
+この`=<<`、別名`flatmap`を使えば、間接参照を3回・4回繰り返す `indirectThrice` や `indirectQuince` もシンプルに書くことができそうです。
 ```haskell
 indirectThrice l x = (l !? x) >>= (l !?) >>= (l !?)
 indirectQuince l x = (l !? x) >>= (l !?) >>= (l !?) >>= (l !?)
 ```
 
-- どうやらこの `and_then` ないし `flatmap` みたいな操作は、`Maybe` の快適な利用に必須のようである
-
-- ところで、`flatmap`というのは他言語では配列のメソッドだった
+`Maybe` を多用してプログラミングしていると、この `and_then` とか `flatmap` と呼ばれている操作は、`Maybe` の快適な利用に必須である、というふうに感じるようになります。ところで、`flatmap`というのは他言語では配列のメソッドでしたから、リストについても定義してみましょう。
 ```haskell
 listflatmap :: (a -> [b]) -> [a] -> [b]
 listflatmap f x =
   case x of
     [] -> []
     y : ys -> f y ++ listflatmap f ys
-
--- どうやら標準ライブラリでは、 >>= はリストについては flip listflatmap のように実装されているらしい
 ```
-- `liftflatmap`も使ってみよう
+標準ライブラリの演算子 `>>=` は、リストについては `flip listflatmap`のようにふるまいます。
 ```haskell
 {-
 元ネタ：ABC049C - 白昼夢 / Daydream
@@ -867,6 +900,8 @@ https://atcoder.jp/contests/abs/tasks/arc065_a
 
 Tを空文字列の状態から始め、dream dreamer erase eraser のいずれかを追加する操作をn回行った文字列を全部列挙してみる
 -}
+
+-- 文字列に、dream dreamer erase eraser のいずれかを追加する操作を一回行った文字列を全部列挙する
 dream1 :: String -> [String]
 dream1 x =
   [
@@ -878,23 +913,53 @@ dream1 x =
 
 dreamN :: Int -> String -> [String]
 dreamN 0 x = [x]
-dreamN n x = dream1 x >>= dreamN (n - 1)
+dreamN n x = dreamN (n - 1) >>= dream1 x
 
+-- ここで、dreamN 2 "" は、 [] >>= dream1 >>= dream1 と等価である
 -- >>> dreamN 2 ""
 -- ["dreamdream","dreamdreamer","dreamerase","dreameraser","dreamerdream","dreamerdreamer","dreamererase","dreamereraser","erasedream","erasedreamer","eraseerase","eraseeraser","eraserdream","eraserdreamer","erasererase","erasereraser"]
 ```
 
-- このような `and_then` とか `flatmap` と呼ばれる操作は非常に便利であるため、これができる型のための型クラス `Monad` が存在する
-  - `Monad` は `Applicative` のさらに高機能版である
-  - `Monad f` を満たす型 `f` については、 `Applicative` で使えた `fmap`・`pure`・`<*>` に加えて、`(>>=) :: f a -> (a -> f b) -> f b` が使えるようになる
-  - `Monad` のインスタンスを実装する際には、次の条件を満たすことがお願いされている：
-    - `pure x >>= f = f x`
-    - `m >>= pure = m`
-    - `(m >>= f) >>= g = m >>= (\x -> f x >>= g)`
+リストやMaybeをはじめとした`flatmap`相当の操作ができる型のために、Haskellでは`Functor (f :: * -> *)`という型クラスが用意されています。Hoogleで`Monad`と検索し、検索結果をクリックしてドキュメントを読んでみましょう。
+
+> ### class Applicative m => Monad (m :: Type -> Type) where
+> 
+> The Monad class defines the basic operations over a monad, a concept from a branch of mathematics known as category theory. From the perspective of a Haskell programmer, however, it is best to think of a monad as an abstract datatype of actions. Haskell's do expressions provide a convenient syntax for writing monadic expressions.
+> 
+> Instances of Monad should satisfy the following:
+> 
+> Left identity
+> 
+>     return a >>= k = k a
+> 
+> Right identity
+> 
+>     m >>= return = m
+> 
+> Associativity
+> 
+>     m >>= (\x -> k x >>= h) = (m >>= k) >>= h
+> 
+> （中略）
+> 
+> ### Minimal complete definition
+> 
+> - (>>=)
+> 
+> ### Methods
+> 
+> (>>=) :: m a -> (a -> m b) -> m b infixl 1
+> 
+> - Sequentially compose two actions, passing any value produced by the first as an argument to the second.
+
+`Monad f` な型 `f` については、 `Applicative` で使えた `fmap`・`pure`・`<*>` に加えて、`(>>=) :: f a -> (a -> f b) -> f b` が使えるようになります。また、`Monad` のインスタンスは、以下の則を満たすことを想定されています。
+- `pure x >>= f = f x`
+- `m >>= pure = m`
+- `(m >>= f) >>= g = m >>= (\x -> f x >>= g)`
 
 #### 節末問題
-- `MyList` を `Monad` にしてみよう
-- `indirectTwice` を参考に、次のような関数を定義しよう
+1. `MyList` を `Monad` にしてみよう
+2. `indirectTwice` を参考に、次のような関数を定義しよう
   - `indirectPlus :: [Int] -> Int -> Maybe Int`
   - `indirectPlus l x` は、
     - `l` の `x` 番目の数字を `y` とする
