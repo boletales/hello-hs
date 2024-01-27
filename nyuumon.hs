@@ -201,3 +201,352 @@ lLength2 x =
 -- >>> lLength lBoolTest
 -- LCons 1 (LCons 2 (LCons 3 LNil))
 -- 2
+
+data Option a =
+    None
+  | Some a
+  deriving Show
+
+-- リストの先頭を返す（失敗することもある）
+lHead :: List a -> Option a
+lHead x =
+  case x of
+    LNil -> None
+    LCons y ys -> Some y
+
+-- Maybe は、先ほど定義した Option と同じもの
+lHead2 :: List a -> Maybe a
+lHead2 x =
+  case x of
+    LNil -> Nothing
+    LCons y ys -> Just y
+
+-- a のリストは [a] という型で表される
+-- (:) はLCons、[] はLNilに対応する
+li2 :: [Int]
+li2 = 1 : 2 : 3 : []
+
+-- リストリテラル
+li3 :: [MyBool]
+li3 = [MyTrue, MyFalse]
+
+-- () は、唯一の値として () を持つ型。2.1節以降で出てくる Functor などと組み合わせて使われることが多い。　() は以下と等価：
+data Unit = Unit
+
+theOnlyOneValueOfUnit :: ()
+theOnlyOneValueOfUnit = ()
+
+
+
+-- 1.5 型クラス
+-- [elem] と相互変換できるものたちの型クラス
+class Listish elem listish where
+  toList :: listish -> [elem]
+  fromList :: [elem] -> listish
+
+-- 型クラスの引数を埋めると、Constraintという型クラス制約を表すKindが出てくる
+-- >>> :k Listish
+-- Listish :: * -> * -> Constraint
+
+-- IntList と [Int] は相互変換できるので、Listishに属させてみる
+instance Listish Int IntList where
+  toList x =
+    case x of
+      ILNil -> []
+      ILCons y ys -> y : toList ys
+  fromList x =
+    case x of
+      [] -> ILNil
+      y : ys -> ILCons y (fromList ys) 
+
+instance Listish a [a] where
+  toList x = x
+  fromList x = x
+
+instance Listish a (List a) where
+  toList x =
+    case x of
+      LNil -> []
+      LCons y ys -> y : toList ys
+  fromList x =
+    case x of
+      [] -> LNil
+      y : ys -> LCons y (fromList ys)
+
+listishHead :: Listish elem listish => listish -> Maybe elem
+listishHead x =
+  case toList x of
+    [] -> Nothing
+    y : _ -> Just y
+
+-- 型クラス制約を複数書く場合は、次のようにする
+listishSum :: (Listish elem listish, Num elem) => listish -> elem
+listishSum x =
+  case toList x of
+    [] -> 0
+    y : ys -> y + listishSum ys -- (+) :: Num a => a -> a -> a
+
+data Stars = Stars Int
+instance Show Stars where
+  show (Stars n) = 
+    case n of
+      0 -> "" -- ['']と同義
+      _ -> '*' : show (Stars (n - 1))
+
+
+-- 1.6 便利なサイト・関数・構文
+-- セクション：中置演算子の片方にだけ値を突っ込んで、関数にする
+
+_minus_5 :: Int -> Int
+_minus_5 = (-) 5
+
+_7minus5 :: Int
+_7minus5 = _minus_5 7 -- 2
+
+-- 便利な関数
+
+-- 関数合成
+-- >>> :t (.)
+-- (.) :: (b -> c) -> (a -> b) -> a -> c
+
+-- リストのmap
+-- >>> :t map
+-- map :: (a -> b) -> [a] -> [b]
+
+-- リストのfilter
+-- >>> :t filter
+-- filter :: (a -> Bool) -> [a] -> [a]
+
+-- 試してみる
+squareThenFilterUnder30 :: [Int] -> [Int]
+squareThenFilterUnder30 = filter (< 30) . map (^ 2)
+
+
+-- let式：ローカル変数を定義する
+squareThenFilterUnder30' :: [Int] -> [Int]
+squareThenFilterUnder30' x =
+  let
+    square        = map (^ 2)
+    filterUnder30 = filter (< 30)
+
+    squared = square x
+    filtered = filterUnder30 squared
+  in
+    filtered
+
+-- レコード構文：data宣言の際、各フィールドを取り出すための関数を定義する
+data Person = Person
+  { name :: String
+  , age  :: Int
+  }
+
+-- レコード構文を用いて定義した型は、初期化時にフィールド名で値を与えることができる
+alice :: Person
+alice = Person { age = 20, name = "Alice"}
+
+-- レコード構文を用いて定義した型の値を部分的に書き換える構文もある
+aliseOneYearLater :: Person
+aliseOneYearLater = alice { age = age alice + 1 }
+
+
+-- 2.2 mapができるもの、Functor
+
+-- 参考: map :: (a -> b) -> [a] -> [b] 
+listmap :: (a -> b) -> List a -> List b
+listmap f x =
+  case x of
+    LNil -> LNil
+    LCons y ys -> LCons (f y) (listmap f ys)
+
+maymap :: (a -> b) -> Maybe a -> Maybe b
+maymap f x =
+  case x of
+    Nothing -> Nothing
+    Just y -> Just (f y)
+
+-- このような IntTo について「型aをもつ中身」を考えるのは無理そうである
+data IntTo a = IntTo (Int -> a)
+
+instance Functor IntTo where
+  fmap f (IntTo g) = IntTo (\x -> f (g x)) -- が、実際このfmapはFunctorの則を満たしている
+
+-- 極端な例として、型変数にかかわらず一種類の値しか持たない Phantom という Functor を考えてみる
+data Phantom a = Phantom
+
+instance Functor Phantom where
+  fmap f Phantom = Phantom -- このfmapもFunctorの則を満たしている
+
+doubleAll :: [Int] -> [Int]
+doubleAll x = (\y -> y * 2) <$> x -- <$> は fmap の中置演算子版。めっちゃ便利
+
+-- Maybeの場合、pure・<*> (別名ap) は次のような中身である
+pureMaybe :: a -> Maybe a
+pureMaybe x = Just x
+
+apMaybe :: Maybe (a -> b) -> Maybe a -> Maybe b
+apMaybe mf mx =
+  case mf of
+    Nothing -> Nothing
+    Just f ->
+      case mx of
+        Nothing -> Nothing
+        Just x -> Just (f x)
+
+-- >>> (*) <$> Just 6 <*> Just 7
+-- Just 42
+
+-- []の場合、pure・<*> は次のような中身である
+pureList :: a -> [a]
+pureList x = [x]
+
+apList :: [a -> b] -> [a] -> [b]
+apList fs xs =
+  case fs of
+    [] -> []
+    f : fs' -> (f <$> xs) ++ (fs' <*> xs)
+
+-- >>> (*) <$> [1,2,3] <*> [1,10,100]
+-- [1,10,100,2,20,200,3,30,300]
+
+
+
+-- 2.2 連鎖ができるもの、Monad
+
+-- リストのn番目があれば返す（中置演算子はその名を括弧でくくって定義できる）
+(!?) :: [a] -> Int -> Maybe a
+(!?) x n =
+  case x of
+    [] -> Nothing
+    y : ys ->
+      case n of
+        0 -> Just y
+        _ | n < 0 -> Nothing
+          | otherwise -> (!?) ys (n - 1)
+
+-- indirectTwice l x という、リストlの「リストlのx番目の数字」番目を返す関数を作りたい
+-- 例：indirectTwice [2, 0, 1] 1 = Just 2（[2, 0, 1]の1番目は0なので、[2, 0, 1]の0番目の数字2を取り出せて、Just 2 が帰ってくる、ようにしたい）
+indirectTwiceDup :: [Int] -> Int -> Maybe (Maybe Int)
+indirectTwiceDup l x = (l !?) <$> (l !? x)
+
+-- 残念ながら、このindirectTwiceの型は [Int] -> Int -> Maybe (Maybe Int) となってしまう
+
+-- 一回目か二回目で失敗してたらNothing、両方成功ならJustを一個にする
+flatten :: Maybe (Maybe a) -> Maybe a
+flatten x =
+  case x of
+    Nothing -> Nothing
+    Just y -> y
+    -- これは、つまり
+    -- Just (Just z) -> Just z
+    -- Just Nothing  -> Nothing
+
+-- これを使って、indirectTwiceを書き直す
+indirectTwice :: [Int] -> Int -> Maybe Int
+indirectTwice l x = flatten ((l !?) <$> (l !? x))
+
+-- この mayflatmap は flatten . fmap と等価である
+mayflatmap :: (a -> Maybe b) -> Maybe a -> Maybe b
+mayflatmap f x =
+  case x of
+    Nothing -> Nothing
+    Just y -> f y
+
+-- これを使って、indirectTwiceを書き直す
+indirectTwice2 :: [Int] -> Int -> Maybe Int
+indirectTwice2 l x = (l !?) `mayflatmap` (l !? x)
+
+{-
+-- ろうとの形だと思ってほしい
+(=<<) :: (a -> Maybe b) -> Maybe a -> Maybe b
+(=<<) = mayflatmap
+
+-- 先に計算するのは Maybe a のほうなのだから、逆向きのやつもほしい
+(>>=) :: Maybe a -> (a -> Maybe b) -> Maybe b
+(>>=) = flip mayflatmap
+-}
+
+indirectThrice l x = (l !? x) >>= (l !?) >>= (l !?)
+indirectQuince l x = (l !? x) >>= (l !?) >>= (l !?) >>= (l !?)
+
+listflatmap :: (a -> [b]) -> [a] -> [b]
+listflatmap f x =
+  case x of
+    [] -> []
+    y : ys -> f y ++ listflatmap f ys
+
+{-
+元ネタ：ABC049C - 白昼夢 / Daydream
+https://atcoder.jp/contests/abs/tasks/arc065_a
+
+Tを空文字列の状態から始め、dream dreamer erase eraser のいずれかを追加する操作をn回行った文字列を全部列挙してみる
+-}
+
+-- 文字列に、dream dreamer erase eraser のいずれかを追加する操作を一回行った文字列を全部列挙する
+dream1 :: String -> [String]
+dream1 x =
+  [
+    x ++ "dream",
+    x ++ "dreamer",
+    x ++ "erase",
+    x ++ "eraser"
+  ]
+
+dreamN :: Int -> String -> [String]
+dreamN 0 x = [x]
+dreamN n x = dreamN (n - 1) x >>= dream1
+
+-- ここで、dreamN 2 "" は、 [] >>= dream1 >>= dream1 と等価である
+-- >>> dreamN 2 ""
+-- ["dreamdream","dreamdreamer","dreamerase","dreameraser","dreamerdream","dreamerdreamer","dreamererase","dreamereraser","erasedream","erasedreamer","eraseerase","eraseeraser","eraserdream","eraserdreamer","erasererase","erasereraser"]
+
+
+-- 2.3 do記法でのびやかにMonadを使う
+
+indirectPlus :: [Int] -> Int -> Maybe Int
+indirectPlus l x =
+  (l !? x) >>= (\y ->
+    (l !? y) >>= (\z ->
+      (l !? (y + z)) >>= (\w ->
+        Just w
+      )
+    )
+  )
+
+-- do記法は何らかの Monad m に対して、型 m a の式を書くための糖衣構文です。
+indirectPlus2 :: [Int] -> Int -> Maybe Int
+indirectPlus2 l x = do
+  y <- l !? x            -- l !? x >>= (\y ->
+  z <- l !? y            -- l !? y >>= (\z ->
+  w <- l !? (y + z)      -- l !? (y+z) >>= (\w ->
+  pure w   -- doの最後の行には、m a の値を起きます
+
+{-
+do記法の各行は、次のように展開されます：
+(var :: a) <- (mexp :: m a) 
+  という行は、 mexp >>= (\var -> という形に展開され、それより下の行で var を使うことができます。
+mexp :: m () 
+  という行は、mexp >>= (\_ -> という形に展開されます。（結果は使いません）
+let (var :: a) = (exp :: a)
+  という行は、let var = exp in という形に展開されます。
+-}
+
+
+indirectPlusSquare :: [Int] -> Int -> Maybe Int
+indirectPlusSquare l x = do
+  y <- l !? x
+  z <- l !? y
+  let index = (y + z) ^ 2 -- doの内部では、let から始まる行でローカルな変数を定義できます。
+  w <- l !? (y + z)
+  pure (w ^ 2) -- doの最後の行には、m a の値を起きます
+
+-- 糖衣構文を展開すると、次のようになります：
+indirectPlusSquare2 :: [Int] -> Int -> Maybe Int
+indirectPlusSquare2 l x =
+  (l !? x) >>= (\y ->
+    (l !? y) >>= (\z ->
+      let index = (y + z) ^ 2 in
+        (l !? (y + z)) >>= (\w ->
+          Just (w ^ 2)
+        )
+    )
+  )

@@ -4,25 +4,27 @@
 ### 0.1 モチベーション
 このドキュメントでは、Haskellの環境構築と基本的な文法を学んだのち、パーサコンビネータライブラリを用いた程度実用的なプログラムを書くことを目標とします。読者として、いままでに2つ以上のプログラミング言語を学んだことのある人を想定しています。
 
-Haskellは、「静的型付き純粋関数型プログラミング言語」と呼ばれることがあります。この言葉は、静的に型の付く「純粋な関数」を用いて「関数型プログラミング」と呼ばれるスタイルのプログラミングをすることに特化した言語であるということを意味しています。それでは、「純粋な関数」とか「関数型プログラミング」とは何で、どのような恩恵をもたらしてくれるのでしょうか。
+Haskellは「静的型付き純粋関数型プログラミング言語」である、つまり、静的に型の付く「純粋な関数」を用いて「関数型プログラミング」と呼ばれるスタイルのプログラミングをすることに特化した言語である、と説明されることがあります。「純粋な関数」とか「関数型プログラミング」とは何で、どのような恩恵をもたらしてくれるのでしょうか。
 
-プログラミングの文脈において、「関数」という言葉には「いろんな命令を実行して最後に値を返す手続き」としての側面と、「値を変換する写像」としての側面があります。
+プログラミングの文脈において、「関数」という言葉は「いろんな命令を実行して最後に値を返す手続き」と「値を変換する写像」の二つの側面を持ちます。
 ```C
 int someGlobalVar = 0;
 
-// 手続きの流れを切り出したもの（値が返ってくることもある）
+// 関数 as 手続きの流れを切り出したもの（値が返ってくることもある）
 int procedure(int x) {
   someGlobalVar += x;
   printf("%d\n", someGlobalVar);
   return someGlobalVar;
 }
 
-// 値を受け取って値を返すもの（手続きをすることもある）
+// 関数 as 値を受け取って値を返すもの（手続きをすることもある）
 int converter(int x) {
   return x * 2;
 }
 ```
-関数型プログラミングという言葉に明確な定義はありませんが、端的に言えば関数の「写像」としての側面を多用するスタイルのプログラミングのことを指します。プログラムの仕様を説明する際に「○○を××したもの」という表現が多く出てくるようであれば、関数型プログラミングの恩恵を強く受けられます。例として、Pythonで書かれた次のコード片を見てみましょう。
+関数型プログラミングという言葉に明確な定義はありませんが、端的に言えば関数の「写像」としての側面を多用するスタイルのプログラミングのことを指します。
+
+プログラムの仕様を説明する際に「○○を××したもの」という表現が多く出てくるようであれば、関数型プログラミングの恩恵を強く受けられます。例として、Pythonで書かれた次のコード片を見てみましょう。
 ```python
 # 配列の各要素を二乗して、30より小さいものだけ取り出すコード
 
@@ -85,11 +87,11 @@ Haskellの特徴について軽く紹介します：
 
       コンパイラがマジカルな最適化を多数行うため、パフォーマンスを改善したければプロファイリングが必須です。また、残念ながら、値の不変性やモナドのような激強構造はかっちりとしたメモリ管理とは相性がよくないようです。厳密なメモリ管理やガチガチのパフォーマンスチューニングを求められるような用途であれば、おとなしくRustを使ってください。
 
-これらの特徴がうまくかみ合うような場面でHaskellを使えば高い生産性を実現できます。コンパイラや自作言語の実装においてHaskellの右に出る言語はおそらくないですし、Webサーバーのような副作用の流れが複雑な場面でも優秀です。上の特徴にがっつりかみ合う場面でなくても、普段使い用のまともに型が付いてスクリプトっぽい書き味が実現できる言語、つまるところPythonしか知らない人のPython代替としてはそれなりの使いやすさがあります。（実際に、GHCのインタプリタモードを使えばスクリプトとして実行できます）
+これらの特徴がうまくかみ合うような場面でHaskellを使えば高い生産性を実現できます。コンパイラや自作言語の実装においてHaskellの右に出る言語はおそらくないですし、Webサーバーのような副作用の流れが複雑な場面でも優秀です。上の特徴にがっつりかみ合う場面でなくても、普段使い用のまともに型が付いてスクリプトっぽい書き味が実現できる言語、語弊を恐れずに言えばPythonしか知らない人のPython代替としてそれなりの使いやすさがあります。（実際に、GHCのインタプリタモードを使えばスクリプトとして実行できます）
 
-逆に、これらの特徴が最悪の方向にかみ合うような場面、つまるところコードと機械語の対応が明確だったり、メモリ管理の厳密さが求められるような場面には向いていないので、そういうときにはおとなしくRustを使ってください。
+逆に、これらの特徴が最悪の方向にかみ合うような場面、つまるところコードと機械語の対応の明白さや、メモリ管理の厳密さが求められるような場面には向いていないので、そういうときにはおとなしくRustを使ってください。
 
-最後に、「Haskellには副作用がないからHello Worldも大変そう」という懸念を払拭するために、IOを使った短いコードを置いておきます。
+最後に、「Haskellには副作用がないからHello Worldにすら尋常でない労力を要する」という都市伝説を払拭するために、IOを使った短いコードを置いておきます。
 
 ```haskell
 -- 一行読んで、たを抜いて、表示する
@@ -114,7 +116,7 @@ tanuki = filter (\c -> c /= 'た')
 
 
 ### 0.2 環境構築
-2024年現在は、ツールチェーンマネージャの [GHCup](https://www.haskell.org/ghcup/) を使うことが推奨されています。インストールの途中で「Stackをインストールするか？」「HLS(Haskell Language Server)をインストールするか？」と訊かれますが、これにはどちらもyと答えてください。Windowsを使っている場合は、インストール後に環境変数の変更を反映させるため、一度再起動してください。
+2024年初頭の現時点では、ツールチェーンマネージャの [GHCup](https://www.haskell.org/ghcup/) を使うことが推奨されています。インストールの途中で「Stackをインストールするか？」「HLS(Haskell Language Server)をインストールするか？」と訊かれますが、これにはどちらもyと答えてください。Windowsを使っている場合は、インストール後に環境変数の変更を反映させるため、一度再起動してください。
 
 インストールされるツール群は以下の通りです：
 - GHCup
@@ -186,7 +188,7 @@ sanbai x = x * 3
 
 ghci上で`:r`と打つと、`nyumon.hs` の内容が再度読み込まれます。
 
-このドキュメントでは、この先しばらく（第2章が終わるぐらいまで）は、一枚のファイルとそれを読み込んだghciで進めていくことにします。ファイルを編集したら、忘れずに `:r` するようにしてください（>20敗）。
+このドキュメントでは、この先しばらく（第2章のなかごろまで）は、一枚のファイルとそれを読み込んだghciで進めていくことにします。ファイルを編集したら、忘れずに `:r` するようにしてください。
 
 
 #### 節末問題
@@ -349,6 +351,10 @@ data BoolAndInt_Or_IntAndIntAndInt =
 -- 型コンストラクタ名と型名は重複してよい
 data WrappedInt = WrappedInt Int
   deriving Show
+
+-- newtype は、別の型のラッパー（型コンストラクタが1種類で、その引数が1つであるとき）専用のdata宣言のようなもの（dataでもよいが、newtypeはコンパイル時に削除されるため、パフォーマンス上での利点がある）
+newtype WrappedInt2 = WrappedInt2 Int
+  deriving Show
 ```
 ここで出てきた `MyTrue` や `MyFalse`、`BoolAndInt` や `IntAndInt` は「値コンストラクタ」と呼ばれるものです。これらを関数のように使って、その型の値を作ることができます。
 ```haskell
@@ -425,8 +431,7 @@ ghci> :k (List Int)
 
 型変数のKindはかならずしも`*`ではありません。
 ```haskell
--- newtype は、型コンストラクタが1種類のとき専用のdata宣言のようなもの（dataでもよい）
-newtype NonStarTypeVarTest (f :: * -> *) a = NSTVTest (f a)
+data NonStarTypeVarTest (f :: * -> *) a = NSTVTest (f a)
 
 -- >>> :k NonStarTypeVarTest
 -- NonStarTypeVarTest :: (* -> *) -> * -> *
@@ -491,6 +496,12 @@ li2 = 1 : 2 : 3 : []
 -- リストリテラル
 li3 :: [MyBool]
 li3 = [MyTrue, MyFalse]
+
+-- () は、唯一の値として () を持つ型。2.1節以降で出てくる Functor などと組み合わせて使われることが多い。　() は以下と等価：
+data Unit = Unit
+
+theOnlyOneValueOfUnit :: ()
+theOnlyOneValueOfUnit = ()
 ```
 
 #### 節末問題
@@ -530,18 +541,18 @@ instance Listish Int IntList where
       y : ys -> ILCons y (fromList ys) 
 
 instance Listish a [a] where
-  tolist x = x
-  fromlist x = x
+  toList x = x
+  fromList x = x
 
 instance Listish a (List a) where
-  tolist x =
+  toList x =
     case x of
       LNil -> []
-      LCons y ys -> y : tolist ys
-  fromlist x =
+      LCons y ys -> y : toList ys
+  fromList x =
     case x of
       [] -> LNil
-      y : ys -> LCons y (fromlist ys)
+      y : ys -> LCons y (fromList ys)
 ```
 型クラスは、Javaのinterfaceに類似した概念（型クラスのほうが表現力が高い）であり、Rustにおけるtraitの元ネタです。
 
@@ -549,34 +560,18 @@ instance Listish a (List a) where
 ```haskell
 listishHead :: Listish elem listish => listish -> Maybe elem
 listishHead x =
-  case tolist x of
+  case toList x of
     [] -> Nothing
     y : _ -> Just y
 
 -- 型クラス制約を複数書く場合は、次のようにする
 listishSum :: (Listish elem listish, Num elem) => listish -> elem
 listishSum x =
-  case tolist x of
+  case toList x of
     [] -> 0
-    y : ys -> y + listishSum (fromlist ys) -- (+) :: Num a => a -> a -> a
+    y : ys -> y + listishSum ys -- (+) :: Num a => a -> a -> a
 ```
 
-型クラスのインスタンスを書く際、型クラス制約を用いることができます。同じ性質を持つ複数の型を型クラスでまとめて、それらすべてに対して一括で関数を書くことができるのは、Haskellの書き味の根幹を占めています。
-```haskell
-class Maybeish elem maybeish where
-  tomaybe :: maybeish -> Maybe elem
-  frommaybe :: Maybe elem -> maybeish
-
-instance Listish elem listish => Maybeish elem listish where
-  tomaybe x =
-    case tolist x of
-      [] -> Nothing
-      y : _ -> Just y
-  frommaybe x =
-    case x of
-      Nothing -> fromlist []
-      Just y -> fromlist [y]
-```
 「これを定義せよ」と指定された関数さえすべて実装すればどんな型でもインスタンスにできますが、多くの型クラスは「インスタンス宣言で指定された構造が特定の性質を持つ」ことを意図して作られています（モノイドであれば単位律と結合律、リストとの相互変換だったら `toList` と `fromList` の合成が恒等になること、など）。意図された性質（「則」とか「Law」などと呼ばれます）を満たさないインスタンス宣言は避けるべきですし、「則」のない型クラスの濫用はコードの可読性を損ねることに注意する必要があります。
 
 Haskellの標準ライブラリや、この先用いるライブラリ様々には数多くの型クラスが定義されています。標準ライブラリで定義された型クラスのうち、頻繁に使うものには次のような例があります。 
@@ -659,6 +654,24 @@ squareThenFilterUnder30' x =
     filtered = filterUnder30 squared
   in
     filtered
+
+-- レコード構文：data宣言の際、各フィールドを取り出すための関数を定義する
+data Person = Person
+  { name :: String
+  , age  :: Int
+  }
+
+-- レコード構文を用いて定義した型は、初期化時にフィールド名で値を与えることができる
+alice :: Person
+alice = Person { age = 20, name = "Alice"}
+
+-- レコード構文を用いて定義した型の値を部分的に書き換える構文もある
+aliseOneYearLater :: Person
+aliseOneYearLater = alice { age = age alice + 1 }
+
+
+-- 型シノニム：型に別名をつける（String2と[Char]は同一の型として扱われます）
+type String2 = [Char]
 ```
 
 #### 節末問題
@@ -690,7 +703,7 @@ maymap f x =
 
 リストやMaybeをはじめとした、中身に関数を適用するような操作ができる型に対して、Haskellでは`Functor (f :: * -> *)`という型クラスが用意されています。Hoogleで`Functor`と検索し、検索結果をクリックしてドキュメントを読んでみましょう。
 
-> ### class Functor (f :: Type -> Type) where
+> class Functor (f :: Type -> Type) where
 > 
 > A type f is a Functor if it provides a function fmap which, given any types a and b lets you apply any function from (a -> b) to turn an f a into an f b, preserving the structure of f. Furthermore f needs to adhere to the following:
 > 
@@ -701,7 +714,7 @@ maymap f x =
 > 
 > Note, that the second law follows from the free theorem of the type fmap and the first law, so you need only check that the former condition holds. See https://www.schoolofhaskell.com/user/edwardk/snippets/fmap or https://github.com/quchen/articles/blob/master/second_functor_law.md for an explanation.
 > 
-> #### Minimal complete definition
+> Minimal complete definition
 > - fmap
 
 `Functor` は、先ほどの `map`・`listmap`・`maymap` に相当する関数 `fmap` の実装を要求する型クラスです。また、`fmap`の実装は以下の性質を満たすことを想定されています。
@@ -733,7 +746,7 @@ doubleAll x = (\y -> y * 2) <$> x -- <$> は fmap の中置演算子版。めっ
 
 `Functor` より高等な機能を持っている型のための型クラスはいくつか存在しますが、この先の流れの都合上、n引数の関数でもmapのようなことができる `Applicative` というものを紹介します。Hoogleでドキュメントを検索してみましょう。
 
-> ### class Functor f => Applicative (f :: Type -> Type) where
+> class Functor f => Applicative (f :: Type -> Type) where
 > 
 > A functor with application, providing operations to
 > 
@@ -762,11 +775,11 @@ doubleAll x = (\y -> y * 2) <$> x -- <$> は fmap の中置演算子版。めっ
 > 
 > （中略）
 > 
-> #### Minimal complete definition
+> Minimal complete definition
 > 
 > - pure, ((<*>) | liftA2)
 > 
-> #### Methods
+> Methods
 > 
 > pure :: a -> f a
 > 
@@ -866,8 +879,9 @@ mayflatmap f x =
 indirectTwice2 :: [Int] -> Int -> Maybe Int
 indirectTwice2 l x = (l !?) `mayflatmap` (l !? x)
 ```
-中置記法を用いて書くと、 `(l !?)` という関数に `(l !? x)` の結果を注入しているようなイメージができます。そのイメージをかっこよく表した中置演算子を定義してみよう。
+中置記法を用いて書くと、 `(l !?)` という関数に `(l !? x)` の結果を注入しているようなイメージができます。Preludeには、そのイメージを形にしたような中置演算子が定義されています：
 ```haskell
+{-
 -- ろうとの形だと思ってほしい
 (=<<) :: (a -> Maybe b) -> Maybe a -> Maybe b
 (=<<) = mayflatmap
@@ -875,8 +889,8 @@ indirectTwice2 l x = (l !?) `mayflatmap` (l !? x)
 -- 先に計算するのは Maybe a のほうなのだから、逆向きのやつもほしい
 (>>=) :: Maybe a -> (a -> Maybe b) -> Maybe b
 (>>=) = flip mayflatmap
+-}
 ```
-名前の衝突で怒られてしまったので、いま書いた演算子二つは`nyumon.hs`から消しておくことにします。（Preludeにすでに同名の演算子が存在し、これは`Maybe`について同じように振る舞います）
 
 この`=<<`、別名`flatmap`を使えば、間接参照を3回・4回繰り返す `indirectThrice` や `indirectQuince` もシンプルに書くことができそうです。
 ```haskell
@@ -913,7 +927,7 @@ dream1 x =
 
 dreamN :: Int -> String -> [String]
 dreamN 0 x = [x]
-dreamN n x = dreamN (n - 1) >>= dream1 x
+dreamN n x = dreamN (n - 1) x >>= dream1
 
 -- ここで、dreamN 2 "" は、 [] >>= dream1 >>= dream1 と等価である
 -- >>> dreamN 2 ""
@@ -922,7 +936,7 @@ dreamN n x = dreamN (n - 1) >>= dream1 x
 
 リストやMaybeをはじめとした`flatmap`相当の操作ができる型のために、Haskellでは`Functor (f :: * -> *)`という型クラスが用意されています。Hoogleで`Monad`と検索し、検索結果をクリックしてドキュメントを読んでみましょう。
 
-> ### class Applicative m => Monad (m :: Type -> Type) where
+> class Applicative m => Monad (m :: Type -> Type) where
 > 
 > The Monad class defines the basic operations over a monad, a concept from a branch of mathematics known as category theory. From the perspective of a Haskell programmer, however, it is best to think of a monad as an abstract datatype of actions. Haskell's do expressions provide a convenient syntax for writing monadic expressions.
 > 
@@ -942,17 +956,17 @@ dreamN n x = dreamN (n - 1) >>= dream1 x
 > 
 > （中略）
 > 
-> ### Minimal complete definition
+> Minimal complete definition
 > 
 > - (>>=)
 > 
-> ### Methods
+> Methods
 > 
 > (>>=) :: m a -> (a -> m b) -> m b infixl 1
 > 
 > - Sequentially compose two actions, passing any value produced by the first as an argument to the second.
 
-`Monad f` な型 `f` については、 `Applicative` で使えた `fmap`・`pure`・`<*>` に加えて、`(>>=) :: f a -> (a -> f b) -> f b` が使えるようになります。また、`Monad` のインスタンスは、以下の則を満たすことを想定されています。
+`Monad f` な型 `f` では、 `Applicative` で使えた `fmap`・`pure`・`<*>` に加えて、`(>>=) :: f a -> (a -> f b) -> f b` が使えるようになります。また、`Monad` のインスタンスは、以下の則を満たすことを想定されています。
 - `pure x >>= f = f x`
 - `m >>= pure = m`
 - `(m >>= f) >>= g = m >>= (\x -> f x >>= g)`
@@ -968,4 +982,57 @@ dreamN n x = dreamN (n - 1) >>= dream1 x
     - ここまで上手くいったら `Just w` を、さもなくば `Nothing` を返す
 
 ### 2.3 do記法でのびやかにモナドを使う
-  
+`indirectQuince`のような直前の結果にのみ依存するものは、`>>=`を使ってシンプルに書くことができました。しかし、節末問題の`indirectPlus`のような、直前以外の結果にも依存するものを書こうとするとどうしても不格好になってしまいます。
+```haskell
+indirectPlus :: [Int] -> Int -> Maybe Int
+indirectPlus l x =
+  (l !? x) >>= (\y ->
+    (l !? y) >>= (\z ->
+      (l !? (y + z)) >>= (\w ->
+        Just w
+      )
+    )
+  )
+```
+このような関数を書きやすくするために、Haskellにはdo記法というものが用意されています。これは、async/awaitに類似した糖衣構文です。
+```haskell
+-- do記法は何らかの Monad m に対して、型 m a の式を書くための糖衣構文です。
+indirectPlus2 :: [Int] -> Int -> Maybe Int
+indirectPlus2 l x = do
+  y <- l !? x            -- l !? x >>= (\y ->
+  z <- l !? y            -- l !? y >>= (\z ->
+  w <- l !? (y + z)      -- l !? (y+z) >>= (\w ->
+  pure w   -- doの最後の行には、m a の値を起きます
+
+
+{-
+do記法の各行は、次のように展開されます：
+(var :: a) <- (mexp :: m a) 
+  という行は、 mexp >>= (\var -> という形に展開され、それより下の行で var を使うことができます。
+mexp :: m () 
+  という行は、mexp >>= (\_ -> という形に展開されます。（結果は使いません）
+let (var :: a) = (exp :: a)
+  という行は、let var = exp in という形に展開されます。
+-}
+
+
+indirectPlusSquare :: [Int] -> Int -> Maybe Int
+indirectPlusSquare l x = do
+  y <- l !? x
+  z <- l !? y
+  let index = (y + z) ^ 2 -- doの内部では、let から始まる行でローカルな変数を定義できます。
+  w <- l !? (y + z)
+  pure (w ^ 2) -- doの最後の行には、m a の値を起きます
+
+-- 糖衣構文を展開すると、次のようになります：
+indirectPlusSquare2 :: [Int] -> Int -> Maybe Int
+indirectPlusSquare2 l x =
+  (l !? x) >>= (\y ->
+    (l !? y) >>= (\z ->
+      let index = (y + z) ^ 2 in
+        (l !? (y + z)) >>= (\w ->
+          Just (w ^ 2)
+        )
+    )
+  )
+```
