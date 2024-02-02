@@ -23,8 +23,8 @@ kakezan をこんなふうに定義すると、 kakezan 3 は \y -> 3 * y とい
 kakezan = \x -> (\y -> x * y)
 
 -- これらはいずれも上の kakezan と同じ意味である
-kakezan2 = \x y -> x * y 
-kakezan3 x y = x * y 
+kakezan2 = \x y -> x * y
+kakezan3 x y = x * y
 
 -- 関数適用は左結合で、優先度は最大である
 _3x4 = kakezan 3 4
@@ -108,7 +108,7 @@ partialTest x =
 -- 1.4 自家製の型・できあいの型・型変数・カインド
 -- 型「MyBool」を定義する
 data MyBool =
-    MyTrue 
+    MyTrue
   | MyFalse
   deriving Show -- ← ghciで値を表示できるようにするおまじない（後で説明する）
 
@@ -257,7 +257,7 @@ instance Listish Int IntList where
   fromList x =
     case x of
       [] -> ILNil
-      y : ys -> ILCons y (fromList ys) 
+      y : ys -> ILCons y (fromList ys)
 
 instance Listish a [a] where
   toList x = x
@@ -288,7 +288,7 @@ listishSum x =
 
 data Stars = Stars Int
 instance Show Stars where
-  show (Stars n) = 
+  show (Stars n) =
     case n of
       0 -> "" -- ['']と同義
       _ -> '*' : show (Stars (n - 1))
@@ -499,9 +499,6 @@ dreamN n x = dreamN (n - 1) x >>= dream1
 -- >>> dreamN 2 ""
 -- ["dreamdream","dreamdreamer","dreamerase","dreameraser","dreamerdream","dreamerdreamer","dreamererase","dreamereraser","erasedream","erasedreamer","eraseerase","eraseeraser","eraserdream","eraserdreamer","erasererase","erasereraser"]
 
-
--- 2.3 do記法でのびやかにMonadを使う
-
 indirectPlus :: [Int] -> Int -> Maybe Int
 indirectPlus l x =
   (l !? x) >>= (\y ->
@@ -550,3 +547,4 @@ indirectPlusSquare2 l x =
         )
     )
   )
+

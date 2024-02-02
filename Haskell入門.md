@@ -2,12 +2,20 @@
 
 ## 第0章 はじめに
 ### 0.1 モチベーション
-このドキュメントでは、Haskellの環境構築と基本的な文法を学んだのち、パーサコンビネータライブラリを用いた程度実用的なプログラムを書くことを目標とします。読者として、いままでに2つ以上のプログラミング言語を学んだことのある人を想定しています。
+このドキュメントでは、第1章・第2章でHaskellの環境構築と基本的な文法を、第3章で実用的なプログラムを書くために必要なツール群・ライブラリについて学び、採取的に、パーサコンビネータライブラリを用いたある程度実用的なプログラムを書くことを目標とします。
+
+このドキュメントの読者として、プログラミング言語の以下のような機能に慣れ親しんでいる人を想定しています：
+- 再帰呼び出し
+- 静的型付け
+- 無名関数・ラムダ式
+- 高階関数（無名関数を引数に取ったり返したりする関数のこと、配列に対する`map`とか）
+- パラメータのついた型・ジェネリクス（C++の`vector<T>`とか）
 
 Haskellは「静的型付き純粋関数型プログラミング言語」である、つまり、静的に型の付く「純粋な関数」を用いて「関数型プログラミング」と呼ばれるスタイルのプログラミングをすることに特化した言語である、と説明されることがあります。「純粋な関数」とか「関数型プログラミング」とは何で、どのような恩恵をもたらしてくれるのでしょうか。
 
 プログラミングの文脈において、「関数」という言葉は「いろんな命令を実行して最後に値を返す手続き」と「値を変換する写像」の二つの側面を持ちます。
 ```C
+// Cのコード
 int someGlobalVar = 0;
 
 // 関数 as 手続きの流れを切り出したもの（値が返ってくることもある）
@@ -26,7 +34,7 @@ int converter(int x) {
 
 プログラムの仕様を説明する際に「○○を××したもの」という表現が多く出てくるようであれば、関数型プログラミングの恩恵を強く受けられます。極端な例として、Pythonで書かれた次のコード片を見てみましょう。
 ```python
-# 配列の各要素を二乗して、30より小さいものだけ取り出すコード
+# ある配列から、その各要素を二乗したのち30より小さいものだけ取り出した配列を作る、Pythonのコード
 
 original = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
@@ -267,7 +275,7 @@ keisan4 f = f
   - 具体的に、`myflip` という関数を作って、`myflip hikizan 3 10` が `7` になるようしてください
 
 ### 1.3 パターンマッチ・再帰
-Haskellで条件分岐をする場合には、`case`式とパターンマッチを使います。
+Haskellで条件分岐をする場合には、`case`式とパターンマッチを使います。Haskellはオフサイドルールを採用しており、インデントに構文上の意味があることに注意してください。
 ```haskell
 collatz :: Int -> Int
 collatz x =
@@ -673,6 +681,10 @@ aliseOneYearLater = alice { age = age alice + 1 }
 
 -- 型シノニム：型に別名をつける（String2と[Char]は同一の型として扱われます）
 type String2 = [Char]
+
+-- タプル：複数の型の直積
+intAndBool :: (Int, Bool)
+intAndBool = (3, True)
 ```
 
 #### 節末問題
@@ -829,6 +841,18 @@ apList fs xs =
 -- >>> (*) <$> [1,2,3] <*> [1,10,100]
 -- [1,10,100,2,20,200,3,30,300]
 ```
+#### 節末問題
+1. 次のような「数式」を評価する、`evalMathExpr :: MathExpr -> Maybe Int` を定義しよう
+```haskell
+data MathExpr =
+    MEConst Int
+  | MEAdd MathExpr MathExpr -- 和
+  | MESub MathExpr MathExpr -- 差
+  | MEMul MathExpr MathExpr -- 積
+  | MEDiv MathExpr MathExpr -- 整数除算（-∞側に切り捨て）、部分関数。0除算の結果は Nothing とする
+  | MEMod MathExpr MathExpr -- 整数除算の余り、部分関数。0除算の結果は Nothing とする
+  | MEPow MathExpr MathExpr -- べき乗。0^0 と x^負数 は Nothing とする
+```
 
 ### 2.2 連鎖ができるもの、Monad
 `Maybe` は、一度使ったら手放せなくなるぐらいには革命的に便利な型です。しかし、2.1節で出てきた `fmap`や`pure`・`<*>` だけでは、そのポテンシャルを最大限生かすことができません。リストのn番目を読み出す関数をつかって、間接参照をする例を考えてみましょう。
@@ -972,19 +996,17 @@ dreamN n x = dreamN (n - 1) x >>= dream1
 - `m >>= pure = m`
 - `(m >>= f) >>= g = m >>= (\x -> f x >>= g)`
 
-#### 節末問題
-1. `MyList` を `Monad` にしてみよう
-2. `indirectTwice` を参考に、次のような関数を定義しよう
-  - `indirectPlus :: [Int] -> Int -> Maybe Int`
-  - `indirectPlus l x` は、
-    - `l` の `x` 番目の数字を `y` とする
-    - `l` の `y` 番目の数字を `z` とする
-    - `l` の `y + z` 番目の数字を `w` とする
-    - ここまで上手くいったら `Just w` を、さもなくば `Nothing` を返す
 
-### 2.3 do記法でのびやかにモナドを使う
-`indirectQuince`のような直前の結果にのみ依存するものは、`>>=`を使ってシンプルに書くことができました。しかし、節末問題の`indirectPlus`のような、直前以外の結果にも依存するものを書こうとするとどうしても不格好になってしまいます。
+ところで、`indirectQuince`のような直前の結果にのみ依存するものは、`>>=`を使ってシンプルに書くことができました。しかし、ここで示す`indirectPlus`のような、直前以外の結果にも依存するコードを書こうとするとどうしても不格好になってしまいます。
 ```haskell
+{-
+indirectPlus l x は、
+  l の x 番目の数字を y とする
+  l の y 番目の数字を z とする
+  l の y + z 番目の数字を w とする
+  ここまで上手くいったら Just w を、さもなくば Nothing を返す
+-}
+
 indirectPlus :: [Int] -> Int -> Maybe Int
 indirectPlus l x =
   (l !? x) >>= (\y ->
@@ -1022,7 +1044,7 @@ indirectPlusSquare l x = do
   y <- l !? x
   z <- l !? y
   let index = (y + z) ^ 2 -- doの内部では、let から始まる行でローカルな変数を定義できます。
-  w <- l !? (y + z)
+  w <- l !? index
   pure (w ^ 2) -- doの最後の行には、m a の値を起きます
 
 -- 糖衣構文を展開すると、次のようになります：
@@ -1031,9 +1053,208 @@ indirectPlusSquare2 l x =
   (l !? x) >>= (\y ->
     (l !? y) >>= (\z ->
       let index = (y + z) ^ 2 in
-        (l !? (y + z)) >>= (\w ->
+        (l !? index) >>= (\w ->
           Just (w ^ 2)
         )
     )
   )
 ```
+このように、do記法を用いれば2つ以上前の結果に依存するようなコードをシンプルに記述することができます。
+
+#### 節末問題
+1. `MyList` を `Monad` にしてみよう
+2. 次のような「コマンド」を評価する関数 `evalCommand1`と`evalCommands`を定義しよう
+```haskell
+data ComState = ComState {
+    comInput   :: [Int] -- 入力列
+  , comOutput  :: [Int] -- 出力列
+  , comReg     :: Int   -- 主レジスタ
+  , comRegSwap :: Int   -- 予備のレジスタ
+  }
+
+data Command =
+        ComReadInput      -- 入力列の先頭を取り出し、主レジスタに格納する。入力列の長さは1つ短くなる（入力列が空なら失敗）
+      | ComReadOutput Int -- 出力列の指定された位置の値を主レジスタに格納する。出力列の長さは変わらない（出力列の指定された位置が存在しないなら失敗）
+      | ComWriteOutput    -- レジスタの値を出力列の末尾に追加する。出力列の長さは1つ長くなる
+      | ComBackup         -- 予備のレジスタに主レジスタの値をコピーする
+      | ComSwapReg        -- 主レジスタと予備のレジスタの値を入れ替える
+      | ComAdd            -- 主レジスタの値を予備のレジスタの値に足し、結果を主レジスタに格納する
+
+initialState :: [Int] -> ComState
+initialState input = ComState {
+    comInput   = input
+  , comOutput  = []
+  , comReg     = 0
+  , comRegSwap = 0
+  }
+
+{-
+evalCommand1 :: Command -> ComState -> Maybe ComState と、
+evalCommands :: [Command] -> [Int] -> Maybe [Int] という関数を定義しよう
+-}
+```
+
+### 2.3 状態付きの計算、Stateモナド
+「状態付きの計算」を説明するために、その具体例を見てみましょう。疑似乱数生成器は、乱数を生成するたびに自身の状態を更新します。
+```haskell
+-- 線形合同法は、一個前に生成した乱数から次の乱数を計算する疑似乱数生成アルゴリズムである
+lcgs :: Int -> Int
+lcgs x = (48271 * x) `mod` 2147483647
+```
+複数回乱数を生成するには、その時点での状態を覚えておく必要があります。以下のような「乱数を二つ生成して足す」関数では、返り値としてその時点での状態を返す必要がありそうです。
+```haskell
+add2Randoms :: Int -> (Int, Int)
+add2Randoms seed =
+  let
+    r1 = lcgs seed
+    r2 = lcgs r1
+  in
+    (seed, r1 + r2)
+
+add2RandomsMinusRandom :: Int -> (Int, Int)
+add2RandomsMinusRandom seed =
+  let
+    (seed', r1) = add2Randoms seed
+    r2 = lcgs seed'
+  in
+    (seed', r1 - r2)
+
+-- add2RandomsMinusRandom の結果を二個足して、偶数かどうか判定する
+a2rmTwiceAndCheckIfEven :: Int -> (Int, Bool)
+a2rmTwiceAndCheckIfEven seed =
+  let
+    (seed', r1) = add2RandomsMinusRandom seed
+    (seed'', r2) = add2RandomsMinusRandom seed'
+  in
+    (seed'', r1 + r2 `mod` 2 == 0)
+```
+`Int -> (Int, a)` という型の関数と、同じような内容のコードがたくさん出てきました。書きやすくするために、補助関数を定義してみます。
+```haskell
+-- 型に別名をつけて読みやすくしてみる
+type WithRng a = Int -> (Int, a)
+
+-- ふつうの値を、乱数生成器を使って何かする関数と同じ型にする
+withoutRng :: a -> WithRng a
+withoutRng x = \seed -> (seed, x)
+
+chainRandom :: (WithRng a) -> (a -> WithRng b) -> WithRng b
+chainRandom gen1 aToGen2 = \seed ->
+  let
+    (seed', r1) = gen1 seed
+    (seed'', r2) = aToGen2 r1 seed'
+  in
+    (seed'', r2)
+
+genRandom :: WithRng Int
+genRandom seed = let r1 = lcgs seed in (r1, r1)
+
+add2Randoms' :: WithRng Int
+add2Randoms' = chainRandom gen1 (\r1 -> 
+                  chainRandom (\r2 ->
+                      withoutRng (r1 + r2)
+                    ))
+
+add2RandomsMinusRandom' :: WithRng Int
+add2RandomsMinusRandom' = chainRandom add2Randoms' (\r1 ->
+                            chainRandom gen1 (\r2 ->
+                                withoutRng (r1 - r2)
+                              ))
+                            
+a2rmTwiceAndCheckIfEven' :: WithRng Bool
+a2rmTwiceAndCheckIfEven' = chainRandom add2RandomsMinusRandom' (\r1 ->
+                              chainRandom add2RandomsMinusRandom' (\r2 ->
+                                  withoutRng (r1 + r2 `mod` 2 == 0)
+                                ))
+```
+さて、この`chainRandom :: (WithRng a) -> (a -> WithRng b) -> WithRng b` のシグネチャ、にらめっこしていると `>>= :: m a -> (a -> m b) -> m b` と同じに見えてきませんか……？newtypeで`WithRngM`という新しい型を作って、それを`Monad`にしてみます。
+```haskell
+newtype WithRngM a = WithRngM { runWithRngM :: Int -> (Int, a) }
+
+-- これらの実装は、それぞれの型クラスの則を満たします。
+instance Functor WithRngM where
+  fmap f (WithRngM g) = WithRngM (\seed ->
+                          let (seed', x) = g seed in
+                            (seed', f x))
+
+instance Applicative WithRngM where
+  pure x = WithRngM (\seed -> (seed, x))
+  WithRngM f <*> WithRngM x = WithRngM (\seed ->
+                                let (seed', f') = f seed
+                                    (seed'', x') = x seed'
+                                in
+                                  (seed'', f' x'))
+
+instance Monad WithRngM where
+-- だいたい chainRandom とおなじ
+WithRngM x >>= f = WithRngM (\seed ->
+                      let (seed', x') = x seed
+                          WithRngM y = f x'
+                      in
+                        y seed')
+```
+Monadにしたので、便利なdo記法が使えるようになります。
+```haskell
+genRandom' :: WithRngM Int
+genRandom' = WithRngM (\seed -> let r1 = lcgs seed in (r1, r1))
+
+add2Randoms'' :: WithRngM Int
+add2Randoms'' = do
+  r1 <- genRandom'
+  r2 <- genRandom'
+  pure (r1 + r2)
+
+add2RandomsMinusRandom'' :: WithRngM Int
+add2RandomsMinusRandom'' = do
+  r1 <- add2Randoms''
+  r2 <- genRandom'
+  pure (r1 - r2)
+
+a2rmTwiceAndCheckIfEven'' :: WithRngM Bool
+a2rmTwiceAndCheckIfEven'' = do
+  r1 <- add2RandomsMinusRandom''
+  r2 <- add2RandomsMinusRandom''
+  pure (r1 + r2 `mod` 2 == 0)
+```
+さて、先ほどは `newtype WithRngM a = WithRngM { runWithRngM :: Int -> (Int, a) }` と定義しましたが、この便利な構造は乱数生成器以外にも使い回せそうです。Haskellの標準ライブラリには、`WithRngM` の定義中の `Int` を型変数 `s` に置き換えた、`State s` という型が用意されており、先ほどの`WithRngM`と同様に使うことができます。
+
+
+### 2.4 IOと向き合う
+第0章で、「副作用」はIOアクションと呼ばれる特殊な値として扱われるという話をしました。このIOアクションは、「外界とあれやこれやして型aの値を手に入れる手続き」という意味の`IO a` という型で表されます。
+
+Preludeは、`getLine :: IO String` や `putStrLn :: String -> IO ()` などのいろいろなIOアクションを提供しています。ghci上でIOアクションを評価すると、そのアクションが実行されます。試してみましょう。
+```
+ghci> putStrLn "(^^)" 
+(^^)
+```
+
+Haskellの標準ライブラリでは、IOアクションどうしをつなげる関数、具体的には、`action1 :: IO a` とその結果に依存する次のアクション `resToAction2 :: a -> IO b` を立て続けに行う新しいアクションを作る関数が用意されています。
+
+なにを隠そう、その関数は本章でさんざん出てきた `>>= :: m a -> (a -> m b) -> m b` なのです。`IO` は、上で述べたような「アクションをつなげる関数」を`>>=`の実装として採用すると`Monad`になります。（`>>=`の具体的な実装について述べようとすると`IO`の正体に言及することになりますが、それは面倒なのでここでは避けます。）
+
+`IO` の `>>=` を実際に使ってみましょう。たとえば、`getLine :: IO String` で受け取った入力を `putStrLn :: String -> IO ()` で出力するアクションは、`getLine >>= putStrLn` と書くことができます。
+```
+ghci> getLine >>= putStrLn
+やっほー！
+やっほー！
+```
+`IO` も`Monad`の一種ですから、便利なdo記法を使うことができます。
+```haskell
+concat2Inputs :: IO ()
+concat2Inputs = do
+  x <- getLine
+  y <- getLine
+  putStrLn (x ++ y)
+```
+Haskellの処理系は、`main` と名のついた型`IO ()`のIOアクションをエントリポイントとして扱います。新しいファイル `nyuumon2.hs` を作製し、以下のように書いてみましょう。
+```haskell
+main :: IO ()
+main = do
+  putStrLn "Hello, world!"
+```
+このファイルをコンパイルして実行してみましょう。
+```
+$ ghc nyuumon2.hs
+$ ./nyuumon2
+Hello, world!
+```
+いままでの章で紹介したような関数をIOアクションにつなげれば、任意のプログラムを書くことができます。「とりあえずHaskellで動くものを書きたい」というだけであれば本節の内容まででもなんとかなりますが、実用の章である第3章の前に、モナドの応用編としてモナド変換子という非常に便利な型に触れることとします。
