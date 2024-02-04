@@ -621,7 +621,15 @@ data V3D = V3D Double Double Double
 length :: Foldable t => t a -> Int
 base Prelude Data.List Data.Foldable
 ```
-検索結果をクリックすると、ドキュメントを読むことができます。`Foldable` は畳み込み（JSのArray.prototype.reduceなど）をサポートしているものたちの型クラスで、リストはこれに含まれています。二行目の`base Prelude Data.List Data.Foldable`は、この関数が含まれているライブラリ（`base`）とモジュール（`Prelude`・`Data.List`・`Data.Foldable`）を表しています。`Prelude`の関数は、インポートなしで使うことができます。
+検索結果をクリックすると、ドキュメントを読むことができます。`Foldable` は畳み込み（JSのArray.prototype.reduceなど）をサポートしているものたちの型クラスで、リストはこれに含まれています。二行目の`base Prelude Data.List Data.Foldable`は、この関数が含まれているパッケージ（`base`）とモジュール（`Prelude`・`Data.List`・`Data.Foldable`）を表しています。`Prelude`の関数は、インポートなしで使うことができます。
+
+`base`やGHCに同梱されたパッケージ内のモジュールは、ファイルの先頭に `import Put.Module.Name.Here` と書くことで使うことができます。
+```haskell
+import Data.List (sort)
+
+-- >>> sort [4, 3, 1 ,2]
+-- [1, 2, 3, 4]
+```
 
 また、便利な関数や構文についてまとめて紹介します：
 ```haskell
@@ -690,12 +698,27 @@ intAndBool = (3, True)
 #### 節末問題
 1. `(\f x y -> f y x)` という関数は、標準ライブラリでは何と呼ばれているでしょうか？
 
+### 1.7 章末問題：関数型プログラミングの練習
+ここまで、Haskellの基本的な文法について解説してきましたが、世の中に存在する問題に関数型プログラミングで立ち向かうには慣れが必要です。本節では、練習として1章までの内容で次のような問題を解いてみましょう。
+#### 1.7.1 ソート
+整数のリストをソートする関数 `mysortint :: [Int] -> [Int]` を定義してみましょう。
+  - リストをソートするアルゴリズムは複数考えることができますが、リストの構造に適したアルゴリズムはどれでしょうか？
+  - 同様のアルゴリズムを用いた手続き型のコードと比較して、どのような違いがあるでしょうか？
+  - `mysortint` はコードをほとんど書き換えずにより一般的な型に対して定義することができます。その場合、どのような型シグネチャになるでしょうか？
+
+#### 1.7.2 csvの処理
+
+```
+```
+
+
+
 ## 第2章 モナドと和解する
-### 2.1 mapができるもの、Functor
-「配列様のデータの各要素に関数を適用する」というmap操作は、プログラミングの場面において頻出します。1.3節で定義した `List` について、map操作を行う関数を書いてみます（1.3節の章末問題で出てきた `listmap` です）。
+### 2.1 「中身に適用」ができるもの、Functor
+「配列様のデータの各要素に関数を適用する」操作は、プログラミングの場面において頻出します。1.3節で定義した `List` について、この操作を行う関数を書いてみます（1.3節の章末問題で出てきた `listmap` です）。
 ```haskell
 -- 参考: map :: (a -> b) -> [a] -> [b] 
-
+-- リストのそれぞれの要素にfを適用した新しいリストを返す
 listmap :: (a -> b) -> List a -> List b
 listmap f x =
   case x of
@@ -703,7 +726,7 @@ listmap f x =
     LCons y ys -> LCons (f y) (listmap f ys)
 ```
 
-Rustを使ったことのある人であれば、Option に map をしたことがあるかもしれません。この「map」というのは、Someの場合は中身に関数を適用して、Noneの場合はNoneのままにする操作のことでした。
+`Maybe`についても、「中身に関数を適用する」操作をおなじように考えることができます。これは、RustのOption型における`map`に相当します。
 ```haskell
 maymap :: (a -> b) -> Maybe a -> Maybe b
 maymap f x =
@@ -712,7 +735,7 @@ maymap f x =
     Just y -> Just (f y)
 ```
 
-`map`・`listmap`・`maymap` の型シグネチャを見比べてみると、それぞれなんらかの `f :: (* -> *)` について `(a -> b) -> (f a -> f b)` という形の型をしていることがわかります。また、第3章で出てくる`Vector`や`Map k`についても、同様のmap操作を考えることができます。
+`map`・`listmap`・`maymap` の型シグネチャを見比べてみると、それぞれなんらかの型コンストラクタ `f :: (* -> *)` について `(a -> b) -> (f a -> f b)` という形の型をしていることがわかります。
 
 リストやMaybeをはじめとした、中身に関数を適用するような操作ができる型に対して、Haskellでは`Functor (f :: * -> *)`という型クラスが用意されています。Hoogleで`Functor`と検索し、検索結果をクリックしてドキュメントを読んでみましょう。
 
@@ -757,7 +780,7 @@ doubleAll :: [Int] -> [Int]
 doubleAll x = (\y -> y * 2) <$> x -- <$> は fmap の中置演算子版。めっちゃ便利
 ```
 
-`Functor` より高等な機能を持っている型のための型クラスはいくつか存在しますが、この先の流れの都合上、n引数の関数でもmapのようなことができる `Applicative` というものを紹介します。Hoogleでドキュメントを検索してみましょう。
+`Functor` より高等な機能を持っている型のための型クラスはいくつか存在しますが、ここでは、n引数の関数でもmapのようなことができる `Applicative` というものを紹介します。Hoogleでドキュメントを検索してみましょう。
 
 > class Functor f => Applicative (f :: Type -> Type) where
 > 
@@ -923,7 +946,7 @@ indirectThrice l x = (l !? x) >>= (l !?) >>= (l !?)
 indirectQuince l x = (l !? x) >>= (l !?) >>= (l !?) >>= (l !?)
 ```
 
-`Maybe` を多用してプログラミングしていると、この `and_then` とか `flatmap` と呼ばれている操作は、`Maybe` の快適な利用に必須である、というふうに感じるようになります。ところで、`flatmap`というのは他言語では配列のメソッドでしたから、リストについても定義してみましょう。
+ところで、`flatmap`というのは他言語では配列のメソッドでしたから、リストについても定義してみましょう。
 ```haskell
 listflatmap :: (a -> [b]) -> [a] -> [b]
 listflatmap f x =
@@ -959,7 +982,7 @@ dreamN n x = dreamN (n - 1) x >>= dream1
 -- ["dreamdream","dreamdreamer","dreamerase","dreameraser","dreamerdream","dreamerdreamer","dreamererase","dreamereraser","erasedream","erasedreamer","eraseerase","eraseeraser","eraserdream","eraserdreamer","erasererase","erasereraser"]
 ```
 
-リストやMaybeをはじめとした`flatmap`相当の操作ができる型のために、Haskellでは`Functor (f :: * -> *)`という型クラスが用意されています。Hoogleで`Monad`と検索し、検索結果をクリックしてドキュメントを読んでみましょう。
+リストやMaybeをはじめとした`flatmap`相当の操作ができる型のために、Haskellでは`Monad (f :: * -> *)`という型クラスが用意されています。Hoogleで`Monad`と検索し、検索結果をクリックしてドキュメントを読んでみましょう。
 
 > class Applicative m => Monad (m :: Type -> Type) where
 > 
@@ -1065,7 +1088,7 @@ indirectPlusSquare2 l x =
 1. `MyList` を `Monad` にしてみよう
 2. 次のような「コマンド」を評価する関数 `evalCommand1`と`evalCommands`を定義しよう
 ```haskell
-data ComState = ComState {
+data ComMachine = ComMachine {
     comInput   :: [Int] -- 入力列
   , comOutput  :: [Int] -- 出力列
   , comReg     :: Int   -- 主レジスタ
@@ -1080,8 +1103,8 @@ data Command =
       | ComSwapReg        -- 主レジスタと予備のレジスタの値を入れ替える
       | ComAdd            -- 主レジスタの値を予備のレジスタの値に足し、結果を主レジスタに格納する
 
-initialState :: [Int] -> ComState
-initialState input = ComState {
+initMachine :: [Int] -> ComMachine
+initMachine input = ComMachine {
     comInput   = input
   , comOutput  = []
   , comReg     = 0
@@ -1089,7 +1112,7 @@ initialState input = ComState {
   }
 
 {-
-evalCommand1 :: Command -> ComState -> Maybe ComState と、
+evalCommand1 :: Command -> ComMachine -> Maybe ComMachine と、
 evalCommands :: [Command] -> [Int] -> Maybe [Int] という関数を定義しよう
 -}
 ```
@@ -1215,7 +1238,34 @@ a2rmTwiceAndCheckIfEven'' = do
   r2 <- add2RandomsMinusRandom''
   pure (r1 + r2 `mod` 2 == 0)
 ```
-さて、先ほどは `newtype WithRngM a = WithRngM { runWithRngM :: Int -> (Int, a) }` と定義しましたが、この便利な構造は乱数生成器以外にも使い回せそうです。Haskellの標準ライブラリには、`WithRngM` の定義中の `Int` を型変数 `s` に置き換えた、`State s` という型が用意されており、先ほどの`WithRngM`と同様に使うことができます。
+さて、先ほどは `newtype WithRngM a = WithRngM { runWithRngM :: Int -> (Int, a) }` と定義しましたが、この便利な構造は乱数生成器以外にも使い回せそうです。Haskellの標準ライブラリには、`WithRngM` の定義中の `Int` を型変数 `s` に置き換えた、`State s` という型が用意されており、これは先ほどの`WithRngM`と同様に使うことができます。
+```haskell
+-- Stateの定義
+-- newtype State s a = State { runState :: s -> (s, a) }
+
+genRandom'' :: State Int Int
+genRandom'' = State (\seed -> let r1 = lcgs seed in (r1, r1))
+
+add2Randoms''' :: State Int Int
+add2Randoms''' = do
+  r1 <- genRandom''
+  r2 <- genRandom''
+  pure (r1 + r2)
+
+add2RandomsMinusRandom''' :: State Int Int
+add2RandomsMinusRandom''' = do
+  r1 <- add2Randoms'''
+  r2 <- genRandom''
+  pure (r1 - r2)
+
+a2rmTwiceAndCheckIfEven''' :: State Int Bool
+a2rmTwiceAndCheckIfEven''' = do
+  r1 <- add2RandomsMinusRandom'''
+  r2 <- add2RandomsMinusRandom'''
+  pure (r1 + r2 `mod` 2 == 0)
+```
+
+
 
 
 ### 2.4 IOと向き合う
@@ -1258,3 +1308,6 @@ $ ./nyuumon2
 Hello, world!
 ```
 いままでの章で紹介したような関数をIOアクションにつなげれば、任意のプログラムを書くことができます。「とりあえずHaskellで動くものを書きたい」というだけであれば本節の内容まででもなんとかなりますが、実用の章である第3章の前に、モナドの応用編としてモナド変換子という非常に便利な型に触れることとします。
+
+### 2.6 モナド変換子でモナドを改造する
+
