@@ -740,13 +740,13 @@ intAndBool = (3, True)
 入出力の方法は第二章の中盤で触れますが、ここでは説明を省略するために、それぞれの文字列が入った変数を定義しておきます。
 ```haskell
 hommachiLineCSV :: String
-hommachiLineCSV = "本町, 0.0\n市役所前, 0.7\n城址公園, 1.3\n運動場前, 2.0\n大学北, 2.7\nみなと広場, 3.3\n県営団地, 4.0\n温泉入口, 4.7\n登山口, 5.3"
+hommachiLineCSV = "駅名, キロ程\n本町, 0.0\n市役所前, 0.7\n城址公園, 1.3\n運動場前, 2.0\n大学北, 2.7\nみなと広場, 3.3\n県営団地, 4.0\n温泉入口, 4.7\n登山口, 5.3"
 
 kukoLineCSV :: String
-kukoLineCSV = "空港前, 0.0\n工業団地, 1.2\n市場前, 1.9\n駅北, 2.5\n駅南, 2.7\n大橋, 3.5"
+kukoLineCSV = "駅名, キロ程\n空港前, 0.0\n工業団地, 1.2\n市場前, 1.9\n駅北, 2.5\n駅南, 2.7\n大橋, 3.5"
 
 faresCSV :: String
-faresCSV = "130, 0.0\n170, 1.0\n210, 2.0\n250, 3.0\n290, 4.0\n330, 5.0"
+faresCSV = "運賃, 最小キロ程\n130, 0.0\n170, 1.0\n210, 2.0\n250, 3.0\n290, 4.0\n330, 5.0"
 ```
 このデータを用いて運賃計算をするには、どのような関数を用意するのがよさそうでしょうか？
 
@@ -769,6 +769,7 @@ splitOn c str =
 <summary>また、この問題を解くには次のような関数を用意すればよさそうです（見ずに解いた方が練習になりそうであるため、折りたたみ）</summary>
 
 ```haskell
+-- readCSV :: String -> [[String]]
 -- readStations :: String -> [(String, Double)]
 -- readFares :: String -> [(Double, Int)]
 -- getStationPos :: [(String, Double)] -> String -> Maybe Double
