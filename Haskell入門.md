@@ -200,6 +200,7 @@ ghci上で`:r`と打つと、`nyumon.hs` の内容が再度読み込まれます
 
 
 #### 節末問題
+無からコードを起こす練習をするため、CopilotなどのAI補完を使っている場合は節末問題や章末問題ではオフにすることをお勧めします。
 1．ここまでの知識だけで、「二個の引数を取る関数」を作ることはできるでしょうか？
   - たとえば、`(kakezan 3) 4` と打つと、`12` が返ってくるような関数`kakezan`を作ってみてください
   - ヒント：関数はふつうの値の一種なので、関数を関数の結果として返してもよい
@@ -705,8 +706,10 @@ intAndBool = (3, True)
 ### 1.7 章末問題：関数型プログラミングの練習
 ここまで、Haskellの基本的な文法について解説してきましたが、世の中に存在する問題に関数型プログラミングで立ち向かうには慣れが必要です。本節では、練習として1章までの内容で次のような問題を解いてみましょう。（追記とデバッグをやりやすくするために、`fare.hs`のような別のファイルを用意するのがよいと思います。）
 
-このようなキロ程表・運賃表のcsv文字列と、駅名二つを与えられたときに、その駅間の運賃を計算するプログラムを書きたいとします。
-ただし、路線は二つあり、運賃計算の関数をそれぞれの路線に対して用意したいとします。
+1.1にも書きましたが、無からコードを起こす練習をするため、CopilotなどのAI補完を使っている場合は節末問題や章末問題ではオフにすることをお勧めします。
+
+以下のようなキロ程表・運賃表のcsv文字列と、駅名二つを与えられたときに、その駅間の運賃を計算するプログラムを書いてみましょう。
+ただし、路線は二つあり、運賃計算の関数をそれぞれの路線に対して用意したいものとします。
 ```
 駅名, キロ程
 本町, 0.0
@@ -748,7 +751,14 @@ kukoLineCSV = "駅名, キロ程\n空港前, 0.0\n工業団地, 1.2\n市場前, 
 faresCSV :: String
 faresCSV = "運賃, 最小キロ程\n130, 0.0\n170, 1.0\n210, 2.0\n250, 3.0\n290, 4.0\n330, 5.0"
 ```
-このデータを用いて運賃計算をするには、どのような関数を用意するのがよさそうでしょうか？
+このデータを用いて運賃計算をするための関数 `calcFareAndKiloFromCSV` を書くことはできるでしょうか？
+```haskell
+calcFareFromCSV :: String -> String -> (String -> String -> Maybe (Int, Double))
+calcFareFromCSV stationsCSV faresCSV =
+  (\from to ->
+      Just 0
+    )  -- ← ここを適切な式に書き換える
+```
 
 使えそうな関数をヒントとして挙げておきます。
 ```haskell
@@ -762,23 +772,83 @@ splitOn c str =
 -- 改行で分割（splitOn '\n' と同じような挙動だったと思います）
 -- lines :: String -> [String]
 
--- 文字列から他の型へ変換（IntとDoubleはそれぞれRead型クラスに属するため、readが使えます）
--- read :: Read a => String -> a
+-- 文字列の先頭部分を他の型へパース（返り値：パース候補と残りの文字列の組のリスト。IntとDoubleはそれぞれRead型クラスに属するため、readsが使えます）
+-- reads :: Read a => String -> [(a, String)]
+
+-- readsの結果が空でなかったら先頭を返す
+readMay :: Read a => String -> Maybe a
+readMay str =
+  case reads str of
+    [(x, "")] -> Just x
+    _ -> Nothing
+
+-- 先頭から、特定の条件を満たす要素を取り除きつづける
+-- dropWhile :: (a -> Bool) -> [a] -> [a]
+-- 例： dropWhile (== ' ') "   abc" == "abc"
+
+-- 先頭から、特定の条件を満たす要素を取り出し続ける
+-- takeWhile :: (a -> Bool) -> [a] -> [a]
+-- 例： takeWhile (/= ' ') "abc " == "abc"
+
+-- Maybeにくるまれた値をMaybeを返す関数に渡す（この関数はPreludeの >>= とほぼ同じで、2章のどこかで再登場します）
+andThen :: Maybe a -> (a -> Maybe b) -> Maybe b
+andThen mayx f =
+  case mayx of
+    Nothing -> Nothing
+    Just x -> f x
+
+-- Maybe aのリストをまとめる。リストの要素を一個ずつ見ていって、全部JustだったらJustにくるまれたリストを返す（この関数はPreludeの sequenceA とほぼ同じで、2章のどこかで再登場します）
+sumupMaybes :: [Maybe a] -> Maybe [a]
+sumupMaybes maylist =
+  case maylist of
+    [] -> Just []
+    Nothing : _ -> Nothing
+    Just x : maylist' -> 
+      case sumupMaybes maylist' of
+        Nothing -> Nothing
+        Just xs -> Just (x : xs)
+
+-- リストの先頭から関数を適用していって、途中でNothingが出てきたらやめる（この関数はPreludeの traverse とほぼ同じで、2章のどこかで再登場します）
+sumupMayMap :: (a -> Maybe b) -> [a] -> Maybe [b]
+sumupMayMap f list =
+  case list of
+    [] -> Just []
+    x : xs ->
+      case f x of
+        Nothing -> Nothing
+        Just y -> 
+          case sumupMayMap f xs of
+            Nothing -> Nothing
+            Just ys -> Just (y : ys)
+  -- sumupMaybes (map f x) とおなじ
 ```
 <details>
 <summary>また、この問題を解くには次のような関数を用意すればよさそうです（見ずに解いた方が練習になりそうであるため、折りたたみ）</summary>
 
 ```haskell
--- readCSV :: String -> [[String]]
--- readStations :: String -> [(String, Double)]
--- readFares :: String -> [(Double, Int)]
+-- readCSV :: String -> Maybe ([String], [[String]])  ← (先頭行, それ以外)
+-- readStationsCSV :: String -> Maybe [(String, Double)]
+-- readFaresCSV :: String -> Maybe [(Double, Int)]
 -- getStationPos :: [(String, Double)] -> String -> Maybe Double
--- getFare :: [(Int, Double)] -> Double -> Int
--- calcFare :: [(String, Double)] -> [(Int, Double)]-> Double -> Double -> Maybe Int
+-- kiloToFare :: [(Int, Double)] -> Double -> Maybe Int
+-- calcFareAndKilo :: [(String, Double)] -> [(Int, Double)]-> Double -> Double -> Maybe (Int, Double)
+
+-- ただし、readStationsやreadFaresはもっと分解したほうがよさそうです
 ```
 </details>
+解いている最中に「Maybeを付けたり外したり煩わしい！」と感じたならば、2.1・2.2節をのぞき見すると便利な関数が見つかるかもしれません。
 
-1章だけの知識でも十分解くことはできますが、2.1・2.2節を通してMaybeの高度な使い方を説明しているため、先にそちらに目を通してもよいかもしれません。
+解けたら、次のようなコードで挙動を確認してみましょう。
+```haskell
+calcFareAndKiloHommachi :: String -> String -> Maybe (Int, Double)
+calcFareAndKiloHommachi = calcFareAndKiloFromCSV hommachiLineCSV faresCSV
+
+calcFareAndKiloKuko :: String -> String -> Maybe (Int, Double)
+calcFareAndKiloKuko = calcFareAndKiloFromCSV kukoLineCSV faresCSV
+
+-- >>> calcFareAndKiloHommachi "本町" "登山口"
+-- Just (330, 5.3)
+```
 
 ## 第2章 モナドと和解する
 ### 2.1 「中身に適用」ができるもの、Functor
