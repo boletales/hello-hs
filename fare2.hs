@@ -34,40 +34,25 @@ readMay str =
     (a, _):_ -> Just a
     _        -> Nothing
 
-readStationCol :: [String] -> Maybe (String, Double)
-readStationCol strs =
-  case strs of
-    name : kilostr : _ ->
-      case readMay kilostr of
-        Just kilo -> Just (name, kilo)
-        Nothing -> Nothing
-    _ -> Nothing
-
-
 readFareCol :: [String] -> Maybe (Int, Double)
-readFareCol strs =
-  case strs of
-    farestr : kilostr : _ ->
-      case readMay farestr of
-        Just fare ->
-          case readMay kilostr of
-            Just kilo -> Just (fare, kilo)
-            Nothing -> Nothing
-        Nothing -> Nothing
+readFareCol line =
+  case line of
+    farestr : kilostr : _ -> (,) <$> readMay farestr <*> readMay kilostr
+
+readStationCol :: [String] -> Maybe (String, Double)
+readStationCol line =
+  case line of
+    name : kilostr : _ -> (name, ) <$> readMay kilostr
+    _ -> Nothing
 
 readStationsCSV :: String -> Maybe [(String, Double)]
 readStationsCSV str =
-  case readCSV str of
-    Just (_, body) ->
-      traverse readStationCol body
-    Nothing -> Nothing
+  traverse readStationCol . snd =<< readCSV str 
 
 readFaresCSV :: String -> Maybe [(Int, Double)]
 readFaresCSV str =
-  case readCSV str of
-    Just (_, body) ->
-      traverse readFareCol body
-    Nothing -> Nothing
+  traverse readFareCol . snd =<< readCSV str
+
 
 getStationPos :: [(String, Double)] -> String -> Maybe Double
 getStationPos stations name =
@@ -88,27 +73,20 @@ kiloToFare fares kilo =
 
 
 calcFareKilo :: [(String, Double)] -> [(Int, Double)] -> String -> String -> Maybe (Int, Double)
-calcFareKilo stations fares from to =
-  let mk1 = getStationPos stations from
-      mk2 = getStationPos stations to
-  in case mk1 of
-      Just k1 ->
-        case mk2 of
-          Just k2 ->
-            case kiloToFare fares (abs (k1 - k2)) of
-              Just fare -> Just (fare, abs (k1 - k2))
-              Nothing -> Nothing
-          Nothing -> Nothing
-      Nothing -> Nothing
+calcFareKilo stations fares from to = 
+  do
+    k1 <- getStationPos stations from
+    k2 <- getStationPos stations to
+    let kilo = abs (k1 - k2)
+    fare <- kiloToFare fares kilo
+    Just (fare, kilo)
 
 calcFareAndKiloFromCSV :: String -> String -> (String -> String -> Maybe (Int, Double))
-calcFareAndKiloFromCSV stationsCSV faresCSV from to  =
-  case readStationsCSV stationsCSV of
-    Just sdata -> 
-      case readFaresCSV faresCSV of
-        Just fdata -> calcFareKilo sdata fdata from to
-        _ -> Nothing
-    _ -> Nothing
+calcFareAndKiloFromCSV stationsCSV faresCSV from to  = 
+  do
+    sdata <- readStationsCSV stationsCSV
+    fdata <- readFaresCSV faresCSV
+    calcFareKilo sdata fdata from to
 
 calcFareAndKiloHommachi = calcFareAndKiloFromCSV hommachiLineCSV faresCSV
 
