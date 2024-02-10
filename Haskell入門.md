@@ -2,12 +2,12 @@
 
 ## 第0章 はじめに
 ### 0.1 モチベーション
-このドキュメントでは、第1章・第2章でHaskellの環境構築と基本的な文法を、第3章で実用的なプログラムを書くために必要なツール群・ライブラリについて学び、採取的に、パーサコンビネータライブラリを用いたある程度実用的なプログラムを書くことを目標とします。
+このドキュメントでは、第1章・第2章でHaskellの環境構築と基本的な文法を、第3章で実用的なプログラムを書くために必要なツール群・ライブラリについて学び、最終的的にパーサコンビネータライブラリを用いたある程度実用的なプログラムを書くことを目標とします。
 
 このドキュメントの読者として、プログラミング言語の以下のような機能に慣れ親しんでいる人を想定しています：
 - 再帰呼び出し
 - 静的型付け
-- 無名関数・ラムダ式
+- 無名関数ないしラムダ式
 - 高階関数（無名関数を引数に取ったり返したりする関数のこと、配列に対する`map`とか）
 - パラメータのついた型・ジェネリクス（C++の`vector<T>`とか）
 
@@ -102,9 +102,13 @@ Haskellの特徴について軽く紹介します：
 最後に、「Haskellには副作用がないからHello Worldにすら尋常でない労力を要する」という都市伝説を払拭するために、IOを使った短いコードを置いておきます。
 
 ```haskell
+-- 文字列から「た」を抜く関数
+tanuki :: String -> String
+tanuki = filter (\c -> c /= 'た')
+
 -- 一行読んで、たを抜いて、表示する
 main :: IO ()
-main = (tanuki <$> getLine) >>= putStrLn
+main = putStrLn =<< (tanuki <$> getLine)
 
 -- ふつうの言語っぽい見た目でも書ける
 -- 注意：doとかいうやつのことは、第2章で説明するまできれいさっぱり忘れておくこと！
@@ -112,10 +116,6 @@ main2 :: IO ()
 main2 = do
   line <- getLine
   putStrLn (tanuki line)
-
--- 文字列から「た」を抜く関数
-tanuki :: String -> String
-tanuki = filter (\c -> c /= 'た')
 
 -- ↓Haskell Language Serverとエディタのプラグインを導入すれば、こういうコメントを書いてエディタ上で式の評価結果を確認できる
 -- >>> tanuki "こたんたたにたちたは"
@@ -203,7 +203,7 @@ ghci上で`:r`と打つと、`nyumon.hs` の内容が再度読み込まれます
 無からコードを起こす練習をするため、CopilotなどのAI補完を使っている場合は節末問題や章末問題ではオフにすることをお勧めします。
 1．ここまでの知識だけで、「二個の引数を取る関数」を作ることはできるでしょうか？
   - たとえば、`(kakezan 3) 4` と打つと、`12` が返ってくるような関数`kakezan`を作ってみてください
-  - ヒント：関数はふつうの値の一種なので、関数を関数の結果として返してもよい
+  - ヒント：関数はふつうの値の一種なので、関数を関数の結果として返すことができます
 
 ### 1.2 関数と型
 節末問題の直後にネタバレを置くのもずいぶん申し訳ない話ですが、「二個の引数を取る関数」はこんなふうに作ることができます。
@@ -276,10 +276,12 @@ keisan4 f = f
   - 具体的に、`myflip` という関数を作って、`myflip hikizan 3 10` が `7` になるようしてください
 
 ### 1.3 パターンマッチ・再帰
-Haskellで条件分岐をする場合には、`case`式とパターンマッチを使います。Haskellはオフサイドルールを採用しており、インデントに構文上の意味があることに注意してください。
+Haskellで条件分岐をする場合には、`case`式とパターンマッチを使います。Haskellはオフサイドルールと呼ばれる、ブロックや式の範囲をインデントで表す構文規則を採用しているため、コピーペーストをする際には注意が必要です（オフサイドルールを採用している他の言語として、Pythonなどがあります）。
 ```haskell
 collatz :: Int -> Int
 collatz x =
+  -- 関数をバッククオートで囲むと、中置演算子として使える
+  -- x `mod` 2 と mod x 2 は同じ意味
   case x `mod` 2 of
   -- x `mod` 2 が 0 の場合
     0 -> x `div` 2
@@ -357,11 +359,11 @@ data BoolAndInt_Or_IntAndIntAndInt =
     | IntAndInt Int Int Int
   deriving Show
 
--- 型コンストラクタ名と型名は重複してよい
+-- 型名（左辺）と値コンストラクタ（右辺）名は重複してよい
 data WrappedInt = WrappedInt Int
   deriving Show
 
--- newtype は、別の型のラッパー（型コンストラクタが1種類で、その引数が1つであるとき）専用のdata宣言のようなもの（dataでもよいが、newtypeはコンパイル時に削除されるため、パフォーマンス上での利点がある）
+-- newtype は、別の型のラッパー（値コンストラクタが1種類で、その引数が1つであるとき）専用のdata宣言のようなもの（dataでもよいが、newtypeはコンパイル時に削除されるため、パフォーマンス上での利点がある）
 newtype WrappedInt2 = WrappedInt2 Int
   deriving Show
 ```
@@ -688,8 +690,8 @@ alice :: Person
 alice = Person { age = 20, name = "Alice"}
 
 -- レコード構文を用いて定義した型の値を部分的に書き換える構文もある
-aliseOneYearLater :: Person
-aliseOneYearLater = alice { age = age alice + 1 }
+aliceOneYearLater :: Person
+aliceOneYearLater = alice { age = age alice + 1 }
 
 
 -- 型シノニム：型に別名をつける（String2と[Char]は同一の型として扱われます）
@@ -1002,7 +1004,7 @@ apList fs xs =
 -- [1,10,100,2,20,200,3,30,300]
 ```
 #### 節末問題
-1. 次のような「数式」を評価する、`evalMathExpr :: MathExpr -> Maybe Int` を定義しよう
+1. 次のような「数式」を評価する、`evalMathExpr :: MathExpr -> Maybe Int` を定義してみましょう
 ```haskell
 data MathExpr =
     MEConst Int
@@ -1222,8 +1224,9 @@ indirectPlusSquare2 l x =
 このように、do記法を用いれば2つ以上前の結果に依存するようなコードをシンプルに記述することができます。
 
 #### 節末問題
-1. `MyList` を `Monad` にしてみよう
-2. 次のような「コマンド」を評価する関数 `evalCommand1`と`evalCommands`を定義しよう
+1. `MyList` を `Monad` にしてみましょう
+2. 1章の章末問題は `>>=` や `do` を使うとシンプルに書くことができます。やってみましょう
+3. 次のような「コマンド」を評価する関数 `evalCommand1`と`evalCommands`を定義しましょう
 ```haskell
 data ComMachine = ComMachine {
     comInput   :: [Int] -- 入力列
@@ -1375,8 +1378,10 @@ a2rmTwiceAndCheckIfEven'' = do
   r2 <- add2RandomsMinusRandom''
   pure (r1 + r2 `mod` 2 == 0)
 ```
-さて、先ほどは `newtype WithRngM a = WithRngM { runWithRngM :: Int -> (Int, a) }` と定義しましたが、この便利な構造は乱数生成器以外にも使い回せそうです。Haskellの標準ライブラリには、`WithRngM` の定義中の `Int` を型変数 `s` に置き換えた、`State s` という型が用意されており、これは先ほどの`WithRngM`と同様に使うことができます。
+さて、先ほどは `newtype WithRngM a = WithRngM { runWithRngM :: Int -> (Int, a) }` と定義しましたが、この便利な構造は乱数生成器以外にも使い回せそうです。Haskellの標準ライブラリの`Control.Monad.State`には、`WithRngM` の定義中の `Int` を型変数 `s` に置き換えた、`State s` という型が用意されており、これは先ほどの`WithRngM`と同様に使うことができます。
 ```haskell
+-- ファイルの先頭に import Control.Monad.State を書いておく
+
 -- Stateの定義
 -- newtype State s a = State { runState :: s -> (s, a) }
 
@@ -1401,11 +1406,34 @@ a2rmTwiceAndCheckIfEven''' = do
   r2 <- add2RandomsMinusRandom'''
   pure (r1 + r2 `mod` 2 == 0)
 ```
+また、状態の変更をしない場合には `State` の亜種である `Reader` を使えばそれを明示することができます（`Control.Monad.Reader`内で定義されています）。
+```haskell
+-- newtype Reader r a = Reader { runReader :: r -> a }
+```
+#### 節末問題
+1. ターン制バトルを実装してみましょう。
+```haskell
+data BattlePlayer = BattlePlayer {
+    plName :: String
+  , plHp   :: Int
+  , plMp   :: Int
+  , plAtk  :: Int
+  , plDef  :: Int
+  }
+
+data BattleSpell =
+    Fireball String
+  | Heal     String
+  | Attack   String
+  | Charge   String
 
 
 
 
-### 2.4 IOと向き合う
+
+```
+
+### 2.6 IOと向き合う
 第0章で、「副作用」はIOアクションと呼ばれる特殊な値として扱われるという話をしました。このIOアクションは、「外界とあれやこれやして型aの値を手に入れる手続き」という意味の`IO a` という型で表されます。
 
 Preludeは、`getLine :: IO String` や `putStrLn :: String -> IO ()` などのいろいろなIOアクションを提供しています。ghci上でIOアクションを評価すると、そのアクションが実行されます。試してみましょう。
@@ -1444,7 +1472,7 @@ $ ghc nyuumon2.hs
 $ ./nyuumon2
 Hello, world!
 ```
-いままでの章で紹介したような関数をIOアクションにつなげれば、任意のプログラムを書くことができます。「とりあえずHaskellで動くものを書きたい」というだけであれば本節の内容まででもなんとかなりますが、実用の章である第3章の前に、モナドの応用編としてモナド変換子という非常に便利な型に触れることとします。
+いままでの章で紹介したような関数をIOアクションにつなげれば、任意のプログラムを書くことができます。「とりあえずHaskellで動くものを書きたい」というだけであれば本節の内容まででもなんとかなりますが、実用の章である第3章の前に、モナド変換子という非常に便利な型に触れることとします。
 
 ### 2.6 モナド変換子でモナドを改造する
 
