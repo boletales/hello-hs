@@ -688,8 +688,8 @@ alice :: Person
 alice = Person { age = 20, name = "Alice"}
 
 -- レコード構文を用いて定義した型の値を部分的に書き換える構文もある
-aliseOneYearLater :: Person
-aliseOneYearLater = alice { age = age alice + 1 }
+aliceOneYearLater :: Person
+aliceOneYearLater = alice { age = age alice + 1 }
 
 
 -- 型シノニム：型に別名をつける（String2と[Char]は同一の型として扱われます）
