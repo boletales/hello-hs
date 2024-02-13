@@ -360,12 +360,14 @@ data BoolAndInt_Or_IntAndIntAndInt =
   deriving Show
 
 -- 型名（左辺）と値コンストラクタ（右辺）名は重複してよい
-data WrappedInt = WrappedInt Int
+data ISBN = ISBN Int
   deriving Show
 
 -- newtype は、別の型のラッパー（値コンストラクタが1種類で、その引数が1つであるとき）専用のdata宣言のようなもの（dataでもよいが、newtypeはコンパイル時に削除されるため、パフォーマンス上での利点がある）
-newtype WrappedInt2 = WrappedInt2 Int
+newtype Price = Price Int
   deriving Show
+
+-- Int, Price, ISBN は相互に区別される
 ```
 ここで出てきた `MyTrue` や `MyFalse`、`BoolAndInt` や `IntAndInt` は「値コンストラクタ」と呼ばれるものです。これらを関数のように使って、その型の値を作ることができます。
 ```haskell
@@ -516,8 +518,8 @@ theOnlyOneValueOfUnit = ()
 ```
 
 #### 節末問題
-1.  `IntList` や `List a` どうしを結合する関数、`ilappend :: IntList -> IntList -> IntList` や `lappend :: List a -> List a -> List a` を定義してみましょう
-2.  `List a` の各要素に型 `a -> b` の関数を適用する関数 `listmap :: (a -> b) -> List a -> List b` を定義してみましょう
+1.  `IntList` や `List a` どうしを結合する関数、`ilappend :: IntList -> IntList -> IntList` や `lappend :: List a -> List a -> List a` を定義してみましょう。
+2.  `List a` の各要素に型 `a -> b` の関数を適用する関数 `listmap :: (a -> b) -> List a -> List b` を定義してみましょう。
 3.  整数のリストをソートする関数 `mysortint :: [Int] -> [Int]` を定義してみましょう。
       - リストをソートするアルゴリズムは複数考えることができますが、リストの構造に適したアルゴリズムはどれでしょうか？
       - 同様のアルゴリズムを用いた手続き型のコードと比較して、どのような違いがあるでしょうか？
