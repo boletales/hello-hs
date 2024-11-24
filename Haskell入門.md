@@ -146,37 +146,25 @@ ghci>
 ```
 
 ここに式を入力すると、評価結果が表示されます
-
 ```
 ghci> 100 + 200
 300
-ghci> sqrt 10                -- 関数適用は、関数 [空白] 引数 
-3.1622776601683795
-ghci> (\x -> x * x) 5        -- ラムダ式（その場で定義された関数）はこういう風に書ける
-25
 ```
 
-ghciの使用中に変数を定義することもできます（同名の定義を行うと、先に定義したほうは隠蔽される）。変数の名前はかならず小文字で始まる必要があります。
-
+ghciでは、値に名前を付けておいて覚えておくことができ、この操作を束縛といいます。（同じ名前に対して二回束縛をすると、先に定義したほうは隠蔽される）。束縛した変数の名前はかならず小文字で始まる必要があります。
 ```
 ghci> someconst = 3
 ghci> someconst * 10
 30
-ghci> nibai = \x -> x * 2    -- 関数はふつうの値なので、当然変数につっこむことができる    
-ghci> nibai 100
-200
 ```
 
 ghciを終了するには、`:q` と打ちます
-
-
 ```
 ghci> :q 
 Leaving GHCi.
 ```
 
 ここまでの内容を `nyumon.hs` というファイルに書き込んで、ghciに読み込ませてみましょう。
-
 ```haskell
 -- nyumon.hs
 
@@ -184,29 +172,60 @@ Leaving GHCi.
 -- Haskellのプログラムは基本的に、定数の宣言でできている
 someconst = 3
 
-nibai = \x -> x * 2
+{-
+ブロックコメントはこう
+-}
 ```
 再度ghciを起動して、`:l nyumon.hs` と打つと、`nyumon.hs` で行った宣言が読み込まれて使えるようになります。たとえば、`nibai 100` と打つと `200` と表示されるはずです。
 
 ghciを開いたまま、`nyumon.hs` に次の内容を書き足してみましょう。
 ```haskell
--- 関数はこのように定義することもできる
-sanbai x = x * 3
+anotherconst = someconst * 3
 ```
 
 ghci上で`:r`と打つと、`nyumon.hs` の内容が再度読み込まれます。
 
 このドキュメントでは、この先しばらく（第2章のなかごろまで）は、一枚のファイルとそれを読み込んだghciで進めていくことにします。ファイルを編集したら、忘れずに `:r` するようにしてください。
 
-
 #### 節末問題
 無からコードを起こす練習をするため、CopilotなどのAI補完を使っている場合は節末問題や章末問題ではオフにすることをお勧めします。
-1．ここまでの知識だけで、「二個の引数を取る関数」を作ることはできるでしょうか？
-  - たとえば、`(kakezan 3) 4` と打つと、`12` が返ってくるような関数`kakezan`を作ってみてください
-  - ヒント：関数はふつうの値の一種なので、関数を関数の結果として返すことができます
+1. nyumon.hs の最後の行を消して `:r` するとエラーが出ることを確認してください。
+2. それを修正して `:r` が成功するようにしてください。
 
 ### 1.2 関数と型
-節末問題の直後にネタバレを置くのもずいぶん申し訳ない話ですが、「二個の引数を取る関数」はこんなふうに作ることができます。
+Haskellの関数は必ず1変数関数で、引数として1つの値を取って1つの値を返します。関数に値を渡すときは、関数の後に空白を空けて引数を書きます。
+
+適用が複数連なる場合は、左側が先に計算されます
+```
+ghci> sqrt 10                -- 関数適用は、関数 [空白] 引数 
+3.1622776601683795
+```
+
+Haskellでは、「ラムダ式」というものを用いて自分で関数を定義することができます。
+
+ラムダ式は `\x -> x * 3` のように表記します。左の例は「引数 x を受け取って x*3 を返す関数」という意味です。
+
+自分で定義した関数にも、あらかじめ定義されている`sqrt`などと同じように値を渡すことができます。
+```
+ghci> (\x -> x * 3) 5
+15
+```
+
+Haskellの関数は普通の値の一種なので、数字などと同じように名前を付けたり、引数として渡したり、結果として返したりすることができます。
+```
+ghci> sanbai = \x -> x * 3
+ghci> sanbai 5
+15
+ghci> put10 = \f -> f 10
+ghci> put10 sanbai
+30
+ghci> put10 (\x -> x + 1)
+11
+```
+
+それでは、もし1変数関数しか使えないなら、複数引数関数が使いたくなったときどうしたらよいのでしょうか……？
+
+「二個の引数を取る関数」はこんなふうに作ることができます。
 ```haskell
 -- ↓これが複数行コメント
 {-
@@ -226,7 +245,6 @@ _3x4 = kakezan 3 4
 ```
 Haskellにおいて「多変数関数」のように見えるものは、「引数を一個取って、のこりの引数を受け取る関数を返す関数」です。
 
-また、関数を関数の引数として渡すこともできます。
 ```haskell
 -- keisanは3引数関数で、2引数関数・整数・整数を受け取って、計算して返す
 keisan f x y = f x y
@@ -267,6 +285,18 @@ ghci> :t (\x f -> f x)
 (\x f -> f x) :: t1 -> (t1 -> t2) -> t2
 ```
 型の表記の中で、大文字で始まる型は具体的な型、小文字で始まる型は「型変数」と呼ばれる、そこに何が入ってもよい部分を表すものです。
+
+型シグネチャで通常省略される全称量化を省略せずに書くと、上の例は`forall t1 t2. t1 -> (t1 -> t2) -> t2`となりますが、これは「どんな型`t1`, `t2`についても、`(t1 -> t2) -> t2`として扱ってよい」という意味です。
+
+また、`:t` コマンドを使うと、`10 :: Num a => a` のような表記が出てくることがありますが、これは `条件 => 型本体`という形式で条件のついた型を表しています。
+
+詳細は後ほど説明しますが、上の例では「どんな型`a`についてでも、`a`が数値型である限り、型`a`として扱ってよい」という意味です（実際に`10`は`Int`の値としても`Double`の値としても扱うことができます）
+```
+ghci> hikizan 10 5
+5
+ghci> 10*3.14
+31.400000000000002
+```
 
 #### 節末問題
 1. `keisan` は次のように定義しても同じような意味になることを確認してみましょう。
@@ -479,11 +509,16 @@ lLength2 x =
 -- 2
 ```
 
-最後に、「計算に失敗して値が返ってこないことがある」ということを表す、RustのOption型を移植してみましょう
+最後に、「計算に失敗してエラーが返ってくることがある」ということを表す、RustのOption型・Result型を移植してみましょう
 ```haskell
 data Option a =
     None
   | Some a
+  deriving Show
+
+data Result a b =
+    Ok a
+  | Err b
   deriving Show
 
 -- リストの先頭を返す（失敗することもある）
@@ -496,12 +531,15 @@ lHead x =
 
 Haskellの標準ライブラリや、第3章でつかうような様々なライブラリには、data宣言で定義された型がたくさん含まれています。たとえば、
 ```haskell
--- Maybe は、先ほど定義した Option と同じもの
+-- Maybe は、先ほど定義した Option と同じもの。ただし、Some の代わりに Just、None の代わりに Nothing が使われる
 lHead2 :: List a -> Maybe a
 lHead2 x =
   case x of
     LNil -> Nothing
     LCons y ys -> Just y
+
+-- Haskellでは上で定義した Result は Either という名前で標準ライブラリに含まれている
+-- ただし、Ok の代わりに Right、Err の代わりに Left が使われる
 
 -- a のリストは [a] という型で表される
 -- (:) はLCons、[] はLNilに対応する
@@ -804,6 +842,7 @@ andThen mayx f =
     Just x -> f x
 
 -- Maybe aのリストをまとめる。リストの要素を一個ずつ見ていって、全部JustだったらJustにくるまれたリストを返す（この関数はPreludeの sequenceA とほぼ同じで、2章のどこかで再登場します）
+-- sumupMaybes [Just 1, Just 2, Just 3] == Just [1, 2, 3]
 sumupMaybes :: [Maybe a] -> Maybe [a]
 sumupMaybes maylist =
   case maylist of
@@ -814,7 +853,8 @@ sumupMaybes maylist =
         Nothing -> Nothing
         Just xs -> Just (x : xs)
 
--- リストの先頭から関数を適用していって、途中でNothingが出てきたらやめる（この関数はPreludeの traverse とほぼ同じで、2章のどこかで再登場します）
+-- リストの先頭から関数を適用していって、途中でNothingが出てきたら諦めてNothingを返す（この関数はPreludeの traverse とほぼ同じで、2章のどこかで再登場します）
+-- sumupMayMap (\x -> x*2) [Just 1, Just 2, Just 3] == Just [2, 4, 6]
 sumupMayMap :: (a -> Maybe b) -> [a] -> Maybe [b]
 sumupMayMap f list =
   case list of
@@ -1298,13 +1338,13 @@ a2rmTwiceAndCheckIfEven seed =
 `Int -> (Int, a)` という型の関数と、同じような内容のコードがたくさん出てきました。書きやすくするために、補助関数を定義してみます。
 ```haskell
 -- 型に別名をつけて読みやすくしてみる
-type WithRng a = Int -> (Int, a)
+type WithRNG a = Int -> (Int, a)
 
 -- ふつうの値を、乱数生成器を使って何かする関数と同じ型にする
-withoutRng :: a -> WithRng a
-withoutRng x = \seed -> (seed, x)
+withoutRNG :: a -> WithRNG a
+withoutRNG x = \seed -> (seed, x)
 
-chainRandom :: (WithRng a) -> (a -> WithRng b) -> WithRng b
+chainRandom :: (WithRNG a) -> (a -> WithRNG b) -> WithRNG b
 chainRandom gen1 aToGen2 = \seed ->
   let
     (seed', r1) = gen1 seed
@@ -1312,77 +1352,77 @@ chainRandom gen1 aToGen2 = \seed ->
   in
     (seed'', r2)
 
-genRandom :: WithRng Int
+genRandom :: WithRNG Int
 genRandom seed = let r1 = lcgs seed in (r1, r1)
 
-add2Randoms' :: WithRng Int
+add2Randoms' :: WithRNG Int
 add2Randoms' = chainRandom gen1 (\r1 -> 
                   chainRandom (\r2 ->
-                      withoutRng (r1 + r2)
+                      withoutRNG (r1 + r2)
                     ))
 
-add2RandomsMinusRandom' :: WithRng Int
+add2RandomsMinusRandom' :: WithRNG Int
 add2RandomsMinusRandom' = chainRandom add2Randoms' (\r1 ->
                             chainRandom gen1 (\r2 ->
-                                withoutRng (r1 - r2)
+                                withoutRNG (r1 - r2)
                               ))
                             
-a2rmTwiceAndCheckIfEven' :: WithRng Bool
+a2rmTwiceAndCheckIfEven' :: WithRNG Bool
 a2rmTwiceAndCheckIfEven' = chainRandom add2RandomsMinusRandom' (\r1 ->
                               chainRandom add2RandomsMinusRandom' (\r2 ->
-                                  withoutRng (r1 + r2 `mod` 2 == 0)
+                                  withoutRNG (r1 + r2 `mod` 2 == 0)
                                 ))
 ```
-さて、この`chainRandom :: (WithRng a) -> (a -> WithRng b) -> WithRng b` のシグネチャ、にらめっこしていると `>>= :: m a -> (a -> m b) -> m b` と同じに見えてきませんか……？newtypeで`WithRngM`という新しい型を作って、それを`Monad`にしてみます。
+さて、この`chainRandom :: (WithRNG a) -> (a -> WithRNG b) -> WithRNG b` のシグネチャ、にらめっこしていると `>>= :: m a -> (a -> m b) -> m b` と同じに見えてきませんか……？newtypeで`WithRNGM`という新しい型を作って、それを`Monad`にしてみます。
 ```haskell
-newtype WithRngM a = WithRngM { runWithRngM :: Int -> (Int, a) }
+newtype WithRNGM a = WithRNGM { runWithRNGM :: Int -> (Int, a) }
 
 -- これらの実装は、それぞれの型クラスの則を満たします。
-instance Functor WithRngM where
-  fmap f (WithRngM g) = WithRngM (\seed ->
+instance Functor WithRNGM where
+  fmap f (WithRNGM g) = WithRNGM (\seed ->
                           let (seed', x) = g seed in
                             (seed', f x))
 
-instance Applicative WithRngM where
-  pure x = WithRngM (\seed -> (seed, x))
-  WithRngM f <*> WithRngM x = WithRngM (\seed ->
+instance Applicative WithRNGM where
+  pure x = WithRNGM (\seed -> (seed, x))
+  WithRNGM f <*> WithRNGM x = WithRNGM (\seed ->
                                 let (seed', f') = f seed
                                     (seed'', x') = x seed'
                                 in
                                   (seed'', f' x'))
 
-instance Monad WithRngM where
+instance Monad WithRNGM where
 -- だいたい chainRandom とおなじ
-WithRngM x >>= f = WithRngM (\seed ->
+WithRNGM x >>= f = WithRNGM (\seed ->
                       let (seed', x') = x seed
-                          WithRngM y = f x'
+                          WithRNGM y = f x'
                       in
                         y seed')
 ```
 Monadにしたので、便利なdo記法が使えるようになります。
 ```haskell
-genRandom' :: WithRngM Int
-genRandom' = WithRngM (\seed -> let r1 = lcgs seed in (r1, r1))
+genRandom' :: WithRNGM Int
+genRandom' = WithRNGM (\seed -> let r1 = lcgs seed in (r1, r1))
 
-add2Randoms'' :: WithRngM Int
+add2Randoms'' :: WithRNGM Int
 add2Randoms'' = do
   r1 <- genRandom'
   r2 <- genRandom'
   pure (r1 + r2)
 
-add2RandomsMinusRandom'' :: WithRngM Int
+add2RandomsMinusRandom'' :: WithRNGM Int
 add2RandomsMinusRandom'' = do
   r1 <- add2Randoms''
   r2 <- genRandom'
   pure (r1 - r2)
 
-a2rmTwiceAndCheckIfEven'' :: WithRngM Bool
+a2rmTwiceAndCheckIfEven'' :: WithRNGM Bool
 a2rmTwiceAndCheckIfEven'' = do
   r1 <- add2RandomsMinusRandom''
   r2 <- add2RandomsMinusRandom''
   pure (r1 + r2 `mod` 2 == 0)
 ```
-さて、先ほどは `newtype WithRngM a = WithRngM { runWithRngM :: Int -> (Int, a) }` と定義しましたが、この便利な構造は乱数生成器以外にも使い回せそうです。Haskellの標準ライブラリの`Control.Monad.State`には、`WithRngM` の定義中の `Int` を型変数 `s` に置き換えた、`State s` という型が用意されており、これは先ほどの`WithRngM`と同様に使うことができます。
+さて、先ほどは `newtype WithRNGM a = WithRNGM { runWithRNGM :: Int -> (Int, a) }` と定義しましたが、この便利な構造は乱数生成器以外にも使い回せそうです。Haskellの標準ライブラリの`Control.Monad.State`には、`WithRNGM` の定義中の `Int` を型変数 `s` に置き換えた、`State s` という型が用意されており、これは先ほどの`WithRNGM`と同様に使うことができます。
 ```haskell
 -- ファイルの先頭に import Control.Monad.State を書いておく
 
@@ -1415,29 +1455,63 @@ a2rmTwiceAndCheckIfEven''' = do
 -- newtype Reader r a = Reader { runReader :: r -> a }
 ```
 #### 節末問題
-1. ターン制バトルを実装してみましょう。
+1. 回転・前進の命令を持った「ロボット」を考え、それを動かしてみましょう（「ロボの状態」型を作って、命令ごとに状態の変化を計算していくことにします）。以下のコードの`error "unimplemented"`となっている部分を実装で埋めてください。
 ```haskell
-data BattlePlayer = BattlePlayer {
-    plName :: String
-  , plHp   :: Int
-  , plMp   :: Int
-  , plAtk  :: Int
-  , plDef  :: Int
+data RoboDir = North | East | South | West
+data RoboCommand = TurnLeft | TurnRight | MoveForward
+data RobotState = RobotState {
+    robotX :: Int
+  , robotY :: Int
+  , robotDir :: RoboDir
   }
 
-data BattleSpell =
-    Fireball String
-  | Heal     String
-  | Attack   String
-  | Charge   String
+dirRight :: RoboDir -> RoboDir
+dirRight d =
+  case d of
+    North -> East
+    East -> South
+    South -> West
+    West -> North
 
+dirLeft :: RoboDir -> RoboDir
+dirLeft d =
+  case d of
+    North -> West
+    West -> South
+    South -> East
+    East -> North
 
+dirToVec :: RoboDir -> (Int, Int)
+dirToVec d =
+  case d of
+    North -> ( 0,  1)
+    East  -> ( 1,  0)
+    South -> ( 0, -1)
+    West  -> (-1,  0)
 
+evalCommand :: RoboCommand -> RobotState -> RobotState
+evalCommand com st =
+  case c of
+    TurnLeft    -> st { robotDir = dirLeft  (robotDir st) }
+    TurnRight   -> st { robotDir = dirRight (robotDir st) }
+    MoveForward -> let (dx, dy) = dirToVec (robotDir st) in st { robotX = robotX st + dx, robotY = robotY st + dy }
 
+runCommand :: RoboCommand -> State RobotState ()
+runCommand com = 
+  status <- get -- get :: MonadState s m => m s で、状態を取り出せる
+  put (evalCommand com status) -- put :: MonadState s m => s -> m () で、状態を更新できる
 
+-- ここから実装
+-- 前にn歩進む
+goStraight :: Int -> State RobotState ()
+goStraight n = error "unimplemented"
+
+-- n歩進み、右に回るのを繰り返して正方形を描く
+goSquare :: Int -> State RobotState ()
+goSquare n = error "unimplemented"
 ```
 
-### 2.6 IOと向き合う
+### 2.4 IOと向き合う
 第0章で、「副作用」はIOアクションと呼ばれる特殊な値として扱われるという話をしました。このIOアクションは、「外界とあれやこれやして型aの値を手に入れる手続き」という意味の`IO a` という型で表されます。
 
 Preludeは、`getLine :: IO String` や `putStrLn :: String -> IO ()` などのいろいろなIOアクションを提供しています。ghci上でIOアクションを評価すると、そのアクションが実行されます。試してみましょう。
@@ -1478,5 +1552,181 @@ Hello, world!
 ```
 いままでの章で紹介したような関数をIOアクションにつなげれば、任意のプログラムを書くことができます。「とりあえずHaskellで動くものを書きたい」というだけであれば本節の内容まででもなんとかなりますが、実用の章である第3章の前に、モナド変換子という非常に便利な型に触れることとします。
 
-### 2.6 モナド変換子でモナドを改造する
+### 2.5 MaybeTモナド変換子
+現実世界を相手にプログラミングしていると、`IO (Maybe a)` のような型を使いたくなることがよくあります。
+```haskell
+-- ファイルの先頭
+import System.Directory
+
+-- 設定ファイルを読み込む
+readConfig :: String -> IO (Maybe String)
+readConfig file = do
+  exists <- doesFileExist file
+  if exists
+    then do
+      content <- readFile file
+      pure (Just content)
+    else
+      pure Nothing
+```
+
+複数のファイルを読み込もうとすると、以下のようになります。
+```haskell
+-- なんかいっぱい設定ファイルが必要な操作
+readConfigsAndDoSomething :: IO (Maybe String)
+readConfigsAndDoSomething = do
+  maybeconfig1 <- readConfig "config1.txt"
+  case maybeconfig1 of
+    Nothing -> pure Nothing
+    Just config1 -> do
+      maybeconfig2 <- readConfig "config2.txt"
+      case maybeconfig2 of
+        Nothing -> pure Nothing
+        Just config2 -> do
+          maybeconfig3 <- readConfig "config3.txt"
+          case maybeconfig3 of
+            Nothing -> pure Nothing
+            Just config3 -> do
+              putStrLn ("config1: " ++ config1)
+              putStrLn ("config2: " ++ config2)
+              putStrLn ("config3: " ++ config3)
+              pure (Just (config1 ++ config2 ++ config3))
+```
+
+地獄ですね。この地獄は以下のような新しい型`IOMaybe a`を`Monad`にすることで解決できます。
+```haskell
+newtype IOMaybe a = IOMaybe { runIOMaybe :: IO (Maybe a) }
+
+ioToIOMaybe :: IO a -> IOMaybe a
+ioToIOMaybe x = IOMaybe (Just <$> x)
+
+fmapIOMaybe :: (a -> b) -> IOMaybe a -> IOMaybe b
+fmapIOMaybe f (IOMaybe x) = IOMaybe (do
+    maybeA <- x -- x :: IO (Maybe a) なので、アクション x を実行して Maybe a を取り出す
+    case maybeA of
+      Nothing -> pure Nothing
+      Just a -> pure (Just (f a))
+  )
+
+-- ところで、↑は以下と等価である（確認してみてください）
+fmapIOMaybe2 :: (a -> b) -> IOMaybe a -> IOMaybe b
+fmapIOMaybe2 f (IOMaybe x) = IOMaybe (fmap (fmap f) x)
+
+pureIOMaybe :: a -> IOMaybe a
+pureIOMaybe x = IOMaybe (pure (pure x))
+
+joinIOMaybe :: IOMaybe (IOMaybe a) -> IOMaybe a
+joinIOMaybe (IOMaybe x) = IOMaybe (do
+    maybeIOMaybeA <- x -- x :: IO (Maybe (IOMaybe a)) なので、アクション x を実行して Maybe (IOMaybe a) を取り出す
+    case maybeIOMaybeA of
+      Nothing -> pure Nothing
+      Just a  -> a
+  )
+
+-- instance宣言は省略
+```
+
+この`IOMaybe`を使うと、`readConfigsAndDoSomething`は次のように書き換えられます。
+```haskell
+
+readConfig2 :: String -> IOMaybe String
+readConfig2 file = IOMaybe (readConfig file)
+
+readConfigsAndDoSomething2 :: IO (Maybe String)
+readConfigsAndDoSomething2 = runIOMaybe $ do
+  config1 <- readConfig2 "config1.txt"
+  config2 <- readConfig2 "config2.txt"
+  config3 <- readConfig2 "config3.txt"
+  ioToIOMaybe (putStrLn ("config1: " ++ config1))
+  ioToIOMaybe (putStrLn ("config2: " ++ config2))
+  ioToIOMaybe (putStrLn ("config3: " ++ config3))
+  pure (config1 ++ config2 ++ config3)
+```
+
+すっきりして最高です。ところで、さきほどの`IOMaybe`のような型は、IO以外の一般のモナドについても定義できそうです。
+
+Control.Monad.Trans.Maybe モジュールの MaybeT は、`IOMaybe`の一般化です。`MaybeT m a` は、`m (Maybe a)` という型をラップして、`Monad`インスタンスを提供します。
+```haskell
+import Control.Monad.Trans.Maybe
+
+readConfig3 :: String -> MaybeT IO String
+readConfig3 file = MaybeT (readConfig file)
+
+readConfigsAndDoSomething3 :: IO (Maybe String)
+readConfigsAndDoSomething3 = runMaybeT $ do
+  config1 <- readConfig3 "config1.txt"
+  config2 <- readConfig3 "config2.txt"
+  config3 <- readConfig3 "config3.txt"
+  liftIO (putStrLn ("config1: " ++ config1))
+  liftIO (putStrLn ("config2: " ++ config2))
+  liftIO (putStrLn ("config3: " ++ config3))
+  pure (config1 ++ config2 ++ config3)
+```
+
+この `MaybeT` のような、モナドを元に機能追加版のモナドを作るものを一般に「モナド変換子」と呼びます。代表的なモナド変換子は以下の通りです：
+- `MaybeT m a`：`m (Maybe a)`。Control.Monad.Trans.Maybe モジュール
+- `ExceptT e m a`：`m (Either e a)`。Control.Monad.Trans.Except モジュール
+- `ReaderT r m a`：`r -> m a`。Control.Monad.Trans.Reader モジュール
+- `StateT s m a`：`s -> m (a, s)`。Control.Monad.Trans.State モジュール
+
+`ExeptT`を使うと、先ほどの例は次のように書き換えられます。
+```haskell
+import Control.Monad.Trans.Except
+
+readConfig4 :: String -> ExceptT String IO String
+readConfig4 file = ExceptT (do
+    exists <- doesFileExist file
+    if exists
+      then do
+        content <- readFile file
+        pure (Right content)
+      else
+        pure (Left ("Error! file not found: " ++ file))
+  )
+
+readConfigsAndDoSomething4 :: IO (Either String String)
+readConfigsAndDoSomething4 = runExceptT $ do
+  config1 <- readConfig4 "config1.txt"
+  config2 <- readConfig4 "config2.txt"
+  config3 <- readConfig4 "config3.txt"
+  liftIO (putStrLn ("config1: " ++ config1))
+  liftIO (putStrLn ("config2: " ++ config2))
+  liftIO (putStrLn ("config3: " ++ config3))
+  pure (config1 ++ config2 ++ config3)
+```
+
+ここまで学習すると、実用的なプログラムを便利に書くことができるようになります。第3章では、パッケージ管理ツール Stack を使って、実際にHaskellのプロジェクトを作成し、実行してみましょう。
+
+#### 節末問題
+工事中
+
+
+## 第3章 Haskellを実用する
+### 3.1 Stackの使い方
+0.2節で、Stackというパッケージ管理ツールをインストールしました。Stackは、依存関係の衝突がないパッケージセット Stackage を元に、プロジェクトごとにパッケージを管理することができます。
+
+まず、Stackを使って新しいプロジェクトを作成してみましょう。
+```
+$ stack new nyumon
+```
+
+このコマンドを実行すると、nyumonというフォルダにたくさんのファイルが生成されます。
+- `package.yaml`：パッケージの設定ファイル
+- `stack.yaml`：Stackの設定ファイル（プロジェクト単位）。利用するStackageをバージョンアップしたいときにはここを編集する
+- `nyumon.cabal`：Cabalの設定ファイル。package.yamlから自動生成される
+- `src/Lib.hs`：ライブラリのコード
+- `app/Main.hs`：本体のコード
+
+この状態で、`stack build`を実行すると、プロジェクトがビルドされます。`stack run`でビルドと実行を一気に行うこともできます。
+
+なお、Stackによるパッケージのインストールを反映するには、`ghci`のようなHaskell関係のコマンドもすべて`stack ghci`で実行する必要があります。
+
+外部のパッケージを利用する際は、`package.yaml`の`dependencies`に追加します。たとえば、`vector`パッケージを使いたい場合は、以下のように記述します。
+```yaml
+dependencies:
+- base >= 4.7 && < 5
+- vector
+```
+
+追記を行ってから`stack build`を実行すると、プロジェクト内で`vector`パッケージが利用できるようになります。
 
